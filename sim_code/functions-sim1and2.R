@@ -237,3 +237,32 @@ genData <- function(n) {
 
 #----
 
+# function 2: simulate data for multiple groups----
+
+genGroups <- function(MCSampID, n, G) {
+  
+  # set the seed
+  library(parallel)
+  library(portableParallelSeeds)
+  mySeeds <- seedCreator(nReps = 5000, streamsPerRep = 1, seed = 20505)
+  
+  setSeeds(projSeeds = mySeeds, run = MCSampID)
+  
+  gDat <- lapply(1:G, function(g){
+    
+    gen <- genData(n = n)
+    
+    gen$Actor <- gen$Actor + g*100
+    gen$Partner <- gen$Partner + g*100
+    
+    cbind(Group = g, gen)
+  })
+  
+  gDat <- do.call("rbind", gDat)
+  
+  return(gDat)
+}
+
+# genGroups(MCSampID = 1, n = 5, G = 3)
+
+#----
