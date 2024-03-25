@@ -10,6 +10,13 @@
 # setwd("/Users/Aditi_2/Desktop/UvA/SR-SEM_job/stage1hyperpars/sim_code")
 # getwd()
 
+# MCSampID = 1; n = 5; G = 3
+# rr.data <- genGroups(MCSampID = MCSampID, n = n, G = G)
+# rr.vars <- c("V1", "V2", "V3")
+# IDout <- "Actor"; IDin <- "Partner"; IDgroup <- "Group"
+# precision < 0.1
+# targetCorr <- 0.3
+
 # function 0: generate level-specific (co)variance matrices----
 
 getSigma <- function(return_mats = TRUE){
@@ -317,4 +324,62 @@ visBeta <- function(a, b, var1, var2, ...) {
 
 #----
 
+# function 5: thoughtful priors----
 
+thoughtful_priors <- function(data, rr.vars, targetCorr, precision) {
+  # SDs
+  ## m for SDs is already thoughtful/approximate location because lavaan.srm estimates
+  ## it based on the data
+  priors$rr_in_t$sd <- priors$rr_out_t$sd <- 
+    priors$rr_rel_t$sd <- rep(precision, times = 3) # set SD of t-priors to 0.1
+  
+  # correlations --- same thoughtful targetCorr for all correlations at both case and dyad level
+  corr_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss, targetCorr = targetCorr, 
+                          accept.dev = precision, method = "L-BFGS-B", lower = 0)
+  
+  alpha <- corr_hyperpars$par[1]
+  beta <- corr_hyperpars$par[2] # save hyperparameters
+  
+  ## assign case-level hyperpars
+  priors$case_beta[lower.tri(priors$case_beta, diag = FALSE)] <- alpha
+  priors$case_beta[upper.tri(priors$case_beta, diag = FALSE)] <- beta
+  
+  ##  assign dyad-level hyperpars
+  diag(priors$rr_beta_a) <- priors$rr_beta_a[upper.tri(priors$rr_beta_a)] <- 
+    priors$rr_beta_a[lower.tri(priors$rr_beta_a)] <- alpha
+  diag(priors$rr_beta_b) <- priors$rr_beta_b[upper.tri(priors$rr_beta_b)] <- 
+    priors$rr_beta_b[lower.tri(priors$rr_beta_b)] <- beta
+  
+  return(priors)
+}
+
+# thoughtful_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), 
+#                   targetCorr = 0.3, precision = 0.1)
+
+#----
+
+
+# function xxxx: set customised priors for MCMC stage----
+
+# library(lavaan.srm)
+
+set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision, priorType, 
+                       multiMLE = FALSE) {
+ rr.data <- data
+ priors <- srm_priors(rr.data[rr.vars]) # default MCMC priors (diffuse priors)
+ 
+ if (priorType == "default") { # default (diffuse) priors
+   priors
+ } else if (priorType == "thoughtful") { # thoughtful priors
+   
+ } else if (priorType == "prophetic") { # prophetic priors
+   
+ } else if (priorType == "ANOVA") { # method-of-moments priors (ANOVA-based, `TripleR`)
+   
+ } else if (priorType = "FIML") { # FIML-based priors (`srm`)
+   
+ }
+ return(priors)
+}
+
+#----
