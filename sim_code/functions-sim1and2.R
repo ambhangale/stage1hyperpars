@@ -23,139 +23,139 @@ getSigma <- function(return_mats = TRUE){
   
   ## person effects
   
-  Ui_names <- c("V1@A", "V2@A", "V3@A", "V1@P", "V2@P", "V3@P") # person-level indicator names
-  Uf_names <- c("f1@A", "f1@P") # person-level factor names
+  Inames_c <- c("V1@A", "V2@A", "V3@A", "V1@P", "V2@P", "V3@P") # person-level indicator names
+  Fnames_c <- c("f1@A", "f1@P") # person-level factor names
   
   # person-level lambda
-  LAM_U <- matrix(0, 6, 2)
-  LAM_U[1,1] <- 1
-  LAM_U[2,1] <- 1.2
-  LAM_U[3,1] <- 0.7
-  LAM_U[4,2] <- 1
-  LAM_U[5,2] <- 0.6
-  LAM_U[6,2] <- 0.6
+  LAM_c <- matrix(0, 6, 2)
+  LAM_c[1,1] <- 1
+  LAM_c[2,1] <- 1.2
+  LAM_c[3,1] <- 0.7
+  LAM_c[4,2] <- 1
+  LAM_c[5,2] <- 0.6
+  LAM_c[6,2] <- 0.6
   
-  dimnames(LAM_U) <- list(Ui_names, Uf_names)
+  dimnames(LAM_c) <- list(Inames_c, Fnames_c)
   
   # person-level factor cov matrix
-  PHI_U <- matrix(c(0.40, 0.05, 0.05, 0.20), 2, 2)
+  PHI_c <- matrix(c(0.40, 0.05, 0.05, 0.20), 2, 2)
   
-  dimnames(PHI_U) <- list(Uf_names, Uf_names)
+  dimnames(PHI_c) <- list(Fnames_c, Fnames_c)
   
   # person-level indicator residual cov matrix
-  PSI_U <- diag(6)
-  PSI_U[1,1] <- 0.2
-  PSI_U[2,2] <- 0.2
-  PSI_U[3,3] <- 0.2
-  PSI_U[4,4] <- 0.1
-  PSI_U[1,4] <- PSI_U[4,1] <- 0.05
-  PSI_U[5,5] <- 0.1
-  PSI_U[6,6] <- 0.1
-  PSI_U[3,6] <- PSI_U[6,3] <- 0.03
+  PSI_c <- diag(6)
+  PSI_c[1,1] <- 0.2
+  PSI_c[2,2] <- 0.2
+  PSI_c[3,3] <- 0.2
+  PSI_c[4,4] <- 0.1
+  PSI_c[1,4] <- PSI_c[4,1] <- 0.05
+  PSI_c[5,5] <- 0.1
+  PSI_c[6,6] <- 0.1
+  PSI_c[3,6] <- PSI_c[6,3] <- 0.03
   
-  dimnames(PSI_U) <- list(Ui_names, Ui_names)
+  dimnames(PSI_c) <- list(Inames_c, Inames_c)
   
   ## structure dyad effects
   
-  Di_names <- c("V1@AP", "V1@PA", "V2@AP", "V2@PA", "V3@AP", "V3@PA") # dyad-level indicator names
-  Df_names <- c("f1@AP", "f1@PA") # dyad-level factor names
+  Inames_d <- c("V1@AP", "V1@PA", "V2@AP", "V2@PA", "V3@AP", "V3@PA") # dyad-level indicator names
+  Fnames_d <- c("f1@AP", "f1@PA") # dyad-level factor names
   
   # dyad-level lambda
-  LAM_D <- matrix(0, 6, 2)
-  LAM_D[1,1] <- LAM_D[2,2] <- 1
-  LAM_D[3,1] <- LAM_D[4,2] <- 0.8
-  LAM_D[5,1] <- LAM_D[6,2] <- 1.4
+  LAM_d <- matrix(0, 6, 2)
+  LAM_d[1,1] <- LAM_d[2,2] <- 1
+  LAM_d[3,1] <- LAM_d[4,2] <- 0.8
+  LAM_d[5,1] <- LAM_d[6,2] <- 1.4
   
-  dimnames(LAM_D) <- list(Di_names, Df_names)
+  dimnames(LAM_d) <- list(Inames_d, Fnames_d)
   
   # dyad-level factor cov matrix
-  PHI_D <- matrix(c(0.60, 0.15, 0.15, 0.60), 2, 2)
+  PHI_d <- matrix(c(0.60, 0.15, 0.15, 0.60), 2, 2)
   
-  dimnames(PHI_D) <- list(Df_names, Df_names)
+  dimnames(PHI_d) <- list(Fnames_d, Fnames_d)
   
   # dyad-level indicator residual cov matrix
-  PSI_D <- diag(6)
-  PSI_D[1,1] <- PSI_D[2,2] <- 0.3
-  PSI_D[3,3] <- PSI_D[4,4] <- 0.5
-  PSI_D[3,4] <- PSI_D[4,3] <- 0.1
-  PSI_D[5,5] <- PSI_D[6,6] <- 0.4
-  PSI_D[5,6] <- PSI_D[6,5] <- -0.2
+  PSI_d <- diag(6)
+  PSI_d[1,1] <- PSI_d[2,2] <- 0.3
+  PSI_d[3,3] <- PSI_d[4,4] <- 0.5
+  PSI_d[3,4] <- PSI_d[4,3] <- 0.1
+  PSI_d[5,5] <- PSI_d[6,6] <- 0.4
+  PSI_d[5,6] <- PSI_d[6,5] <- -0.2
   
-  dimnames(PSI_D) <- list(Di_names, Di_names)
+  dimnames(PSI_d) <- list(Inames_d, Inames_d)
   
   # person-level sigma
-  SIGMA_U <- LAM_U %*% PHI_U %*% t(LAM_U) + PSI_U
+  SIGMA_c <- LAM_c %*% PHI_c %*% t(LAM_c) + PSI_c
   # dyad-level sigma
-  SIGMA_D <- LAM_D %*% PHI_D %*% t(LAM_D) + PSI_D
+  SIGMA_d <- LAM_d %*% PHI_d %*% t(LAM_d) + PSI_d
   
   ## pop values for satmod
-  Ufsat_names <- c("f1@A", "f2@A", "f3@A", "f1@P", "f2@P", "f3@P") # person-level satmod factor names
-  Dfsat_names <- c("f1@AP", "f1@PA", "f2@AP", "f2@PA", "f3@AP", "f3@PA") # dyad-level satmod factor names
+  FsatNames_c <- c("f1@A", "f2@A", "f3@A", "f1@P", "f2@P", "f3@P") # person-level satmod factor names
+  FsatNames_d <- c("f1@AP", "f1@PA", "f2@AP", "f2@PA", "f3@AP", "f3@PA") # dyad-level satmod factor names
   
-  dimnames(SIGMA_U) <- list(Ufsat_names, Ufsat_names)
-  dimnames(SIGMA_D) <- list(Dfsat_names, Dfsat_names)
+  dimnames(SIGMA_c) <- list(FsatNames_c, FsatNames_c)
+  dimnames(SIGMA_d) <- list(FsatNames_d, FsatNames_d)
   
   # person-level corr matrix
-  R_U <- cov2cor(SIGMA_U)
+  R_c <- cov2cor(SIGMA_c)
   # dyad-level corr matrix
-  R_D <- cov2cor(SIGMA_D)
+  R_d <- cov2cor(SIGMA_d)
   
-  mat_list <- list(LAM_U=LAM_U, PHI_U=PHI_U, PSI_U=PSI_U,
-                   LAM_D=LAM_D, PHI_D=PHI_D, PSI_D=PSI_D,
-                   SIGMA_U = SIGMA_U, SIGMA_D = SIGMA_D, R_U = R_U, R_D = R_D)
+  mat_list <- list(LAM_c=LAM_c, PHI_c=PHI_c, PSI_c=PSI_c,
+                   LAM_d=LAM_d, PHI_d=PHI_d, PSI_d=PSI_d,
+                   SIGMA_c = SIGMA_c, SIGMA_d = SIGMA_d, R_c = R_c, R_d = R_d)
   
   if (return_mats)  return(mat_list)
   
   # creating a dataframe of person-level population values
-  pop_U.cov <- as.data.frame(as.table(SIGMA_U))
-  colnames(pop_U.cov) <- c("row", "col", "pop.cov")
-  pop_U.cov$par_names <- paste0(pop_U.cov$row, "~~", pop_U.cov$col)
-  pop_U.cov <- pop_U.cov[, c("par_names", "pop.cov")]
+  pop_c.cov <- as.data.frame(as.table(SIGMA_c))
+  colnames(pop_c.cov) <- c("row", "col", "pop.cov")
+  pop_c.cov$par_names <- paste0(pop_c.cov$row, "~~", pop_c.cov$col)
+  pop_c.cov <- pop_c.cov[, c("par_names", "pop.cov")]
   
   # person-level SDs
-  mat_U.SD <- diag(sqrt(diag(SIGMA_U)))
-  dimnames(mat_U.SD) <- list(Ufsat_names, Ufsat_names)
-  pop_U.SD <- as.data.frame(as.table(mat_U.SD))
-  pop_U.SD <- pop_U.SD[pop_U.SD$Freq != 0, ]
-  colnames(pop_U.SD) <- c("row", "col", "pop.SD")
-  pop_U.SD$par_names <- paste0(pop_U.SD$row, "~~", pop_U.SD$col)
-  pop_U.SD <- pop_U.SD[, c("par_names", "pop.SD")]
-  rownames(pop_U.SD) <- NULL
+  mat_c.SD <- diag(sqrt(diag(SIGMA_c)))
+  dimnames(mat_c.SD) <- list(FsatNames_c, FsatNames_c)
+  pop_c.SD <- as.data.frame(as.table(mat_c.SD))
+  pop_c.SD <- pop_c.SD[pop_c.SD$Freq != 0, ]
+  colnames(pop_c.SD) <- c("row", "col", "pop.SD")
+  pop_c.SD$par_names <- paste0(pop_c.SD$row, "~~", pop_c.SD$col)
+  pop_c.SD <- pop_c.SD[, c("par_names", "pop.SD")]
+  rownames(pop_c.SD) <- NULL
   
   # person-level correlations
-  mat_U.cor <- solve(mat_U.SD) %*% SIGMA_U %*% solve(mat_U.SD)
-  pop_U.cor <- as.data.frame(as.table(mat_U.cor))
-  colnames(pop_U.cor) <- c("row", "col", "pop.cor")
-  pop_U.cor$par_names <- paste0(pop_U.cor$row, "~~", pop_U.cor$col)
-  pop_U.cor <- pop_U.cor[, c("par_names", "pop.cor")]
+  mat_c.cor <- solve(mat_c.SD) %*% SIGMA_c %*% solve(mat_c.SD)
+  pop_c.cor <- as.data.frame(as.table(mat_c.cor))
+  colnames(pop_c.cor) <- c("row", "col", "pop.cor")
+  pop_c.cor$par_names <- paste0(pop_c.cor$row, "~~", pop_c.cor$col)
+  pop_c.cor <- pop_c.cor[, c("par_names", "pop.cor")]
   
   # creating a dataframe of dyad-level population values
-  pop_D.cov <- as.data.frame(as.table(SIGMA_D))
-  colnames(pop_D.cov) <- c("row", "col", "pop.cov")
-  pop_D.cov$par_names <-  paste0(pop_D.cov$row, "~~", pop_D.cov$col)
-  pop_D.cov <- pop_D.cov[, c("par_names", "pop.cov")]
+  pop_d.cov <- as.data.frame(as.table(SIGMA_d))
+  colnames(pop_d.cov) <- c("row", "col", "pop.cov")
+  pop_d.cov$par_names <-  paste0(pop_d.cov$row, "~~", pop_d.cov$col)
+  pop_d.cov <- pop_d.cov[, c("par_names", "pop.cov")]
   
   # dyad-level SDs
-  mat_D.SD <- diag(sqrt(diag(SIGMA_D)))
-  dimnames(mat_D.SD) <- list(Dfsat_names, Dfsat_names)
-  pop_D.SD <- as.data.frame(as.table(mat_D.SD))
-  pop_D.SD <- pop_D.SD[pop_D.SD$Freq != 0, ]
-  pop_D.SD <- pop_D.SD[!duplicated(pop_D.SD$Freq), ]
-  colnames(pop_D.SD) <- c("row", "col", "pop.SD")
-  pop_D.SD$par_names <- paste0(pop_D.SD$row, "~~", pop_D.SD$col)
-  pop_D.SD <- pop_D.SD[, c("par_names", "pop.SD")]
-  rownames(pop_D.SD) <- NULL
+  mat_d.SD <- diag(sqrt(diag(SIGMA_d)))
+  dimnames(mat_d.SD) <- list(FsatNames_d, FsatNames_d)
+  pop_d.SD <- as.data.frame(as.table(mat_d.SD))
+  pop_d.SD <- pop_d.SD[pop_d.SD$Freq != 0, ]
+  pop_d.SD <- pop_d.SD[!duplicated(pop_d.SD$Freq), ]
+  colnames(pop_d.SD) <- c("row", "col", "pop.SD")
+  pop_d.SD$par_names <- paste0(pop_d.SD$row, "~~", pop_d.SD$col)
+  pop_d.SD <- pop_d.SD[, c("par_names", "pop.SD")]
+  rownames(pop_d.SD) <- NULL
   
   # dyad-level correlations
-  mat_D.cor <- solve(mat_D.SD) %*% SIGMA_D %*% solve(mat_D.SD)
-  pop_D.cor <- as.data.frame(as.table(mat_D.cor))
-  colnames(pop_D.cor) <- c("row", "col", "pop.cor")
-  pop_D.cor$par_names <- paste0(pop_D.cor$row, "~~", pop_D.cor$col)
-  pop_D.cor <- pop_D.cor[, c("par_names", "pop.cor")]
+  mat_d.cor <- solve(mat_d.SD) %*% SIGMA_d %*% solve(mat_d.SD)
+  pop_d.cor <- as.data.frame(as.table(mat_d.cor))
+  colnames(pop_d.cor) <- c("row", "col", "pop.cor")
+  pop_d.cor$par_names <- paste0(pop_d.cor$row, "~~", pop_d.cor$col)
+  pop_d.cor <- pop_d.cor[, c("par_names", "pop.cor")]
   
-  return(list(pop.cov = rbind(pop_U.cov, pop_D.cov),
-              pop.cor = rbind(pop_U.cor, pop_D.cor),
-              pop.SD = rbind(pop_U.SD, pop_D.SD)))
+  return(list(pop.cov = rbind(pop_c.cov, pop_d.cov),
+              pop.cor = rbind(pop_c.cor, pop_d.cor),
+              pop.SD = rbind(pop_c.SD, pop_d.SD)))
 }
 
 # getSigma(return_mats = FALSE)
@@ -167,15 +167,15 @@ getSigma <- function(return_mats = TRUE){
 
 genData <- function(n) {
   
-  P_Sigma <- getSigma()$SIGMA_U # save person- and dyad-level pop.cov matrices
-  D_Sigma <- getSigma()$SIGMA_D
+  SIGMA_c <- getSigma()$SIGMA_c # save person- and dyad-level pop.cov matrices
+  SIGMA_d <- getSigma()$SIGMA_d
   
-  Ui_names <- c("V1@A", "V2@A", "V3@A", "V1@P", "V2@P", "V3@P") # person-level indicator names
-  Di_names <- c("V1@AP", "V1@PA", "V2@AP", "V2@PA", "V3@AP", "V3@PA") # dyad-level indicator names
+  Inames_c <- c("V1@A", "V2@A", "V3@A", "V1@P", "V2@P", "V3@P") # person-level indicator names
+  Inames_d <- c("V1@AP", "V1@PA", "V2@AP", "V2@PA", "V3@AP", "V3@PA") # dyad-level indicator names
   
   # changing names to generate data per SRM component
-  dimnames(P_Sigma) <- list(Ui_names, Ui_names)
-  dimnames(D_Sigma) <- list(Di_names, Di_names)
+  dimnames(SIGMA_c) <- list(Inames_c, Inames_c)
+  dimnames(SIGMA_d) <- list(Inames_d, Inames_d)
   
   ##MEAN VECTOR-----
   mu <- c(rep(0, 6)) # group-mean centered SRM component variables
@@ -184,8 +184,8 @@ genData <- function(n) {
   
   library(rockchalk) # for mvrnorm()
   
-  p_dat <- mvrnorm(n = n, mu = mu, Sigma = P_Sigma)
-  d_dat <- mvrnorm(n = (n*(n - 1))/2, mu = mu, Sigma = D_Sigma) 
+  dat_c <- mvrnorm(n = n, mu = mu, Sigma = SIGMA_c)
+  dat_d <- mvrnorm(n = (n*(n - 1))/2, mu = mu, Sigma = SIGMA_d) 
   # Ndyads = n * (n - 1) -- and we already have separate AP and PA columns, 
   # so we need only (n*(n - 1))/2 rows in total
   
@@ -196,12 +196,12 @@ genData <- function(n) {
     
     # actor effects
     Aname <- paste0(v, "@A")
-    Amat <- matrix(p_dat[, Aname], nrow = n, ncol = n, byrow = FALSE)
+    Amat <- matrix(dat_c[, Aname], nrow = n, ncol = n, byrow = FALSE)
     diag(Amat) <- NA
     
     # partner effects
     Pname <- paste0(v, "@P")
-    Pmat <- matrix(p_dat[, Pname], nrow = n, ncol = n, byrow = TRUE)
+    Pmat <- matrix(dat_c[, Pname], nrow = n, ncol = n, byrow = TRUE)
     diag(Pmat) <- NA
     
     # dyad-level effects
@@ -214,8 +214,8 @@ genData <- function(n) {
     # build the dyad-level matrix
     foo <- which(lower.tri(Rmat, diag = FALSE), arr.ind = TRUE)
     
-    Rmat[foo] <- d_dat[, APname]
-    Rmat[foo[, 2:1]] <- d_dat[, PAname]
+    Rmat[foo] <- dat_d[, APname]
+    Rmat[foo[, 2:1]] <- dat_d[, PAname]
     
     Y_adj <- Amat + Pmat + Rmat # adjacency matrix for Y
     
@@ -326,7 +326,7 @@ visBeta <- function(a, b, var1, var2, ...) {
 
 # function 5: thoughtful priors----
 
-thoughtful_priors <- function(data, rr.vars, targetCorr, precision) {
+thoughtful_priors <- function(data, targetCorr, precision) {
   # SDs
   ## m for SDs is already thoughtful/approximate location because lavaan.srm estimates
   ## it based on the data
@@ -353,18 +353,23 @@ thoughtful_priors <- function(data, rr.vars, targetCorr, precision) {
   return(priors)
 }
 
-# thoughtful_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), 
-#                   targetCorr = 0.3, precision = 0.1)
+# thoughtful_priors(data = rr.data, targetCorr = 0.3, precision = 0.1)
 
 #----
 
+# function 6: prophetic priors----
+
+prophetic_priors <- function(data, pop_corMat = list(pop_c = getSigma()$R_c, 
+                                                     pop_d = getSigma()$R_d), precision)
+
+#----
 
 # function xxxx: set customised priors for MCMC stage----
 
 # library(lavaan.srm)
 
-set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision, priorType, 
-                       multiMLE = FALSE) {
+set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCorr, 
+                       precision, multiMLE = FALSE) {
  rr.data <- data
  priors <- srm_priors(rr.data[rr.vars]) # default MCMC priors (diffuse priors)
  
@@ -372,11 +377,14 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision, priorType
    priors
  } else if (priorType == "thoughtful") { # thoughtful priors
    
+   priors <- thoughtful_priors(data = rr.data, targetCorr = targetCorr, 
+                               precision = precision)
+   
  } else if (priorType == "prophetic") { # prophetic priors
    
  } else if (priorType == "ANOVA") { # method-of-moments priors (ANOVA-based, `TripleR`)
    
- } else if (priorType = "FIML") { # FIML-based priors (`srm`)
+ } else if (priorType == "FIML") { # FIML-based priors (`srm`)
    
  }
  return(priors)
