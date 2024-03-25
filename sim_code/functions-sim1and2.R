@@ -266,3 +266,55 @@ genGroups <- function(MCSampID, n, G) {
 # genGroups(MCSampID = 1, n = 5, G = 3)
 
 #----
+
+# function 3: minimum loss function to optimise over to choose hyperparameters for beta priors----
+
+minLoss <- function(par = c(1.5, 1.5), targetCorr, accept.dev) {
+  # targetCorr = population correlation value we want to estimate
+  # accept.dev = average deviation from targetCorr we are willing to accept
+  
+  # default mean (location) of beta distribution (by default, is 0.5)
+  defaultM <- par[1] / (par[1] + par[2])
+  # default SD of beta distribution (by default, is 0.25)
+  defaultSD <- sqrt(par[1]*par[2] / ((par[1]+par[2])^2 * (par[1] + par[2] + 1))) 
+  
+  
+  # target correlation (location of beta) and accepted deviation around it (accept.dev)
+  # convert to beta scale
+  targetM <- (targetCorr + 1) / 2 # convert targetCorr to beta scale (location of beta)
+  targetSD <- accept.dev / 2 # convert accept.dev to beta scale (SD of beta)
+  
+  mSE <- (defaultM - targetM)^2 # squared error for mean
+  sdSE <- (defaultSD - targetSD)^2 # squared error for sd
+  
+  mSE + sdSE # aim: minimise the sum of squared error (loss function)-- thus, use optim()
+}
+
+# optim(par = c(1.5, 1.5), fn = minLoss, targetCorr = 0.3, accept.dev = 0.1,
+#       method = "L-BFGS-B", lower = 0)
+
+#----
+
+# function 4: visualise beta (not used in simulation)----
+
+visBeta <- function(a, b, var1, var2, ...) {
+  ## variable names available?
+  if (!missing(var1) && !missing(var2)) {
+    corName <- paste0("Cor(", var1, ", ", var2, ")")
+  } else corName <- "Correlation"
+  
+  ## calculate descriptive summary stats for title
+  betaM  <- a/(a+b)
+  betaSD <- sqrt((a*b)/((a+b)^2*(a+b+1)))
+  corM  <- round(betaM*2 - 1, 2)
+  corSD <- round(betaSD*2, 2)
+  
+  ## now plot
+  curve(dbeta((x+1)/2, shape1 = a, shape2 = b), from = -1, to = 1,
+        xlab = corName, ylab = "Prior Density",
+        main = paste0("M = ", corM, ", SD = ", corSD), ...)
+}
+
+#----
+
+
