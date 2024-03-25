@@ -155,3 +155,85 @@ getSigma <- function(return_mats = TRUE){
 # getSigma(return_mats = TRUE)
 
 #----
+
+# function 1: simulate data for a single group----
+
+genData <- function(n) {
+  
+  P_Sigma <- getSigma()$SIGMA_U # save person- and dyad-level pop.cov matrices
+  D_Sigma <- getSigma()$SIGMA_D
+  
+  Ui_names <- c("V1@A", "V2@A", "V3@A", "V1@P", "V2@P", "V3@P") # person-level indicator names
+  Di_names <- c("V1@AP", "V1@PA", "V2@AP", "V2@PA", "V3@AP", "V3@PA") # dyad-level indicator names
+  
+  # changing names to generate data per SRM component
+  dimnames(P_Sigma) <- list(Ui_names, Ui_names)
+  dimnames(D_Sigma) <- list(Di_names, Di_names)
+  
+  ##MEAN VECTOR-----
+  mu <- c(rep(0, 6)) # group-mean centered SRM component variables
+  
+  ##DATA GENERATION-----
+  
+  library(rockchalk) # for mvrnorm()
+  
+  p_dat <- mvrnorm(n = n, mu = mu, Sigma = P_Sigma)
+  d_dat <- mvrnorm(n = (n*(n - 1))/2, mu = mu, Sigma = D_Sigma) 
+  # Ndyads = n * (n - 1) -- and we already have separate AP and PA columns, 
+  # so we need only (n*(n - 1))/2 rows in total
+  
+  Ydat <- NULL
+  Vnames <- c("V1", "V2", "V3")
+  
+  for(v in Vnames) {
+    
+    # actor effects
+    Aname <- paste0(v, "@A")
+    Amat <- matrix(p_dat[, Aname], nrow = n, ncol = n, byrow = FALSE)
+    diag(Amat) <- NA
+    
+    # partner effects
+    Pname <- paste0(v, "@P")
+    Pmat <- matrix(p_dat[, Pname], nrow = n, ncol = n, byrow = TRUE)
+    diag(Pmat) <- NA
+    
+    # dyad-level effects
+    Rmat <- matrix(NA, n, n)
+    
+    # _ij & _ji effects
+    APname <- paste0(v, "@AP")
+    PAname <- paste0(v, "@PA")
+    
+    # build the dyad-level matrix
+    foo <- which(lower.tri(Rmat, diag = FALSE), arr.ind = TRUE)
+    
+    Rmat[foo] <- d_dat[, APname]
+    Rmat[foo[, 2:1]] <- d_dat[, PAname]
+    
+    Y_adj <- Amat + Pmat + Rmat # adjacency matrix for Y
+    
+    # converting the data to long format
+    
+    tempY_low <- cbind(foo, Y_adj[foo])
+    colnames(tempY_low) <- c("Actor", "Partner", v)
+    
+    tempY_up <- cbind(foo[, 2:1], Y_adj[foo[, 2:1]])
+    colnames(tempY_up) <- c("Actor", "Partner", v)
+    
+    tempY <- rbind(tempY_low, tempY_up)
+    
+    # merge with previous variable's long-Y
+    if (is.null(Ydat)) {
+      Ydat <- tempY
+    } else {
+      Ydat <- merge(Ydat, tempY) # necessary to generate multigroup data (next function)
+    }
+  } # end for loop for data generation
+  return(Ydat)
+  
+}
+
+# genData(n = 5)
+
+#----
+
