@@ -326,7 +326,9 @@ visBeta <- function(a, b, var1, var2, ...) {
 
 # function 5: thoughtful priors----
 
-thoughtful_priors <- function(data, targetCorr, precision, default_prior) {
+#FIXME was i right to remove the `data` argument from the `thoughtful_priors()` function?
+
+thoughtful_priors <- function(targetCorr, precision, default_prior) {
   
   priors <- default_prior
   
@@ -355,16 +357,18 @@ thoughtful_priors <- function(data, targetCorr, precision, default_prior) {
     priors$rr_beta_b[lower.tri(priors$rr_beta_b)] <- beta
   
   return(priors)
-}
+} 
 
-# thoughtful_priors(data = rr.data, targetCorr = 0.3, precision = 0.1,
+# thoughtful_priors(targetCorr = 0.3, precision = 0.1,
 #                   default_prior = lavaan.srm::srm_priors(data = rr.data[c("V1", "V2", "V3")]))
 
 #----
 
 # function 6: prophetic priors----
 
-prophetic_priors <- function(data, pop_corMat, pop_SDvec, precision, default_prior) {
+#FIXME was i right to remove the `data` argument from the `prophetic_priors()` function?
+
+prophetic_priors <- function(pop_corMat, pop_SDvec, precision, default_prior) {
   
   priors <- default_prior
   
@@ -460,7 +464,7 @@ prophetic_priors <- function(data, pop_corMat, pop_SDvec, precision, default_pri
   return(priors)
 }
 
-# prophetic_priors(data = rr.data, pop_corMat = list(popCorr_c = getSigma()$R_c,
+# prophetic_priors(pop_corMat = list(popCorr_c = getSigma()$R_c,
 #                                                    popCorr_d = getSigma()$R_d),
 #                  pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
 #                  popSD_d = sqrt(diag(getSigma()$SIGMA_d))), precision = 0.1,
@@ -468,7 +472,182 @@ prophetic_priors <- function(data, pop_corMat, pop_SDvec, precision, default_pri
 
 #----
 
-# function 7:
+# function 7: ANOVA-based methods-of-moments priors----
+
+ANOVA_priors <- function(data, rr.vars, IDout, IDin, IDgroup,
+                         # modelG = FALSE, modelM = FALSE,
+                         #TODO: TDJ: different precisions for SD/Cor?
+                         #      optionally use estimated SE as precision?
+                         precision, default_prior) {
+  rr.data <- data
+  priors <- default_prior # default priors
+  
+  library(TripleR) #FIXME: TDJ: lavaan.srm should check whether it is available
+  
+  matNames_c <- paste0(rep(rr.vars, each = 2), c("_out", "_in"))
+  covMat_c <- matrix(0, length(rr.vars)*2, length(rr.vars)*2,
+                     dimnames = list(matNames_c, matNames_c))
+  matNames_d <- paste0(rep(rr.vars, each = 2), c("_ij", "_ji"))
+  covMat_d <- matrix(0, length(rr.vars)*2, length(rr.vars)*2,
+                     dimnames = list(matNames_d, matNames_d))
+  # univariate SRM using TripleR()
+  for (i in 1:length(rr.vars)) {
+    uv.formula <- paste0(rr.vars[i], "~", IDout, "*", IDin)
+    if (!missing(IDgroup)) uv.formula <- paste0(uv.formula, "|", IDgroup, collapse = "")
+    uvSRM <- RR(as.formula(uv.formula), data = rr.data)
+    uv.gEsts <- cbind(uvSRM$varComp.groups[uvSRM$varComp.groups$type != "error variance",]
+                      , rr.var = rr.vars[i])
+    uv.varNames <- unique(uv.gEsts$type[grep(" variance", uv.gEsts$type)])
+    uv.covNames <- unique(uv.gEsts$type[grep("covariance", uv.gEsts$type)])
+    
+    # rescale negative variances (inadmissable cases) to 0
+    uv.gEsts[uv.gEsts$type %in% uv.varNames,]$estimate <- 
+      ifelse(uv.gEsts[uv.gEsts$type %in% uv.varNames,]$estimate < 0, 0, 
+             uv.gEsts[uv.gEsts$type %in% uv.varNames,]$estimate)
+    
+    # save variances per variable (weighted mean)
+    uv.var <- sapply(uv.varNames, function(type) {
+      n <- uv.gEsts[uv.gEsts$type == type,]$group.size
+      #TODO: TDJ: needs to import this function from stats using Roxygen
+      #TODO: TDJ: weight dyad level by number of dyads?
+      weighted.mean(uv.gEsts[uv.gEsts$type == type,]$estimate, w = n-1)
+    })
+    
+    # save covariances per variable (weighted mean)
+    uv.cov <- sapply(uv.covNames, function(type) {
+      n <- uv.gEsts[uv.gEsts$type == type,]$group.size
+      weighted.mean(uv.gEsts[uv.gEsts$type == type,]$estimate, w = n-1)
+    })
+    
+    # construct covariance matrices (to compute correlation matrices)
+    covMat_c[paste0(rr.vars[i], "_out"), paste0(rr.vars[i], "_out")] <- uv.var["actor variance"]
+    covMat_c[paste0(rr.vars[i], "_in"), paste0(rr.vars[i], "_in")] <- uv.var["partner variance"]
+    covMat_c[paste0(rr.vars[i], "_out"), paste0(rr.vars[i], "_in")] <- covMat_c[paste0(rr.vars[i], "_in"), paste0(rr.vars[i], "_out")] <- 
+      uv.cov["actor-partner covariance"]
+    
+    covMat_d[paste0(rr.vars[i], "_ij"), paste0(rr.vars[i], "_ij")] <- 
+      covMat_d[paste0(rr.vars[i], "_ji"), paste0(rr.vars[i], "_ji")] <- uv.var["relationship variance"]
+    covMat_d[paste0(rr.vars[i], "_ij"), paste0(rr.vars[i], "_ji")] <- 
+      covMat_d[paste0(rr.vars[i], "_ji"), paste0(rr.vars[i], "_ij")] <- uv.cov["relationship covariance"]
+    
+    ## SD priors
+    priors$rr_in_t[rr.vars[i],  "m"] <- sqrt(uv.var["partner variance"])
+    priors$rr_out_t[rr.vars[i], "m"] <- sqrt(uv.var["actor variance"])
+    priors$rr_rel_t[rr.vars[i], "m"] <- sqrt(uv.var["relationship variance"])
+    
+    priors$rr_in_t[rr.vars[i],  "sd"] <- priors$rr_out_t[rr.vars[i], "sd"] <- priors$rr_rel_t[rr.vars[i], "sd"] <- precision
+  }
+  
+  # bivariate SRM using TripleR()
+  for (i in 2:length(rr.vars)) {
+    for (j in 1:(i-1)) {
+      bv.formula <- paste0(rr.vars[i], "+", rr.vars[j], "~", IDout, "*", IDin)
+      if (!missing(IDgroup)) bv.formula <- paste0(bv.formula, "|", IDgroup, collapse = "")
+      bvSRM <- RR(as.formula(paste0(bv.formula)), data = rr.data)
+      bv.gEsts <- do.call("rbind", lapply(1:length(bvSRM$groups), 
+                                          function (g) cbind(bvSRM$groups[[g]]$bivariate, 
+                                                             Group = g, 
+                                                             rr.var = paste0(rr.vars[i],",",rr.vars[j]))))
+      bv.covNames <- unique(bv.gEsts$type[grep("covariance", bv.gEsts$type)])
+      
+      ## weighted mean of the covariances
+      bv.cov <- sapply(bv.covNames, function(type) {
+        #FIXME: TDJ: Observed "n" in data might be too large if listwise deleted by TripleR.
+        #       Can TripleR add $group.size to result? Why is it missing for bivariate?
+        #TODO: TDJ: weight dyad level by number of dyads?
+        n <- sapply(1:length(unique(rr.data$Group)), 
+                    function(x) length(unique(rr.data[rr.data$Group == x,]$Actor)), 
+                    simplify = TRUE)
+        weighted.mean(bv.gEsts[bv.gEsts$type == type,]$estimate, w = n-1)
+      })
+      
+      covMat_c[paste0(rr.vars[i], "_out"), paste0(rr.vars[j], "_out")] <- 
+        covMat_c[paste0(rr.vars[j], "_out"), paste0(rr.vars[i], "_out")] <- 
+        bv.cov["actor-actor covariance"]
+      covMat_c[paste0(rr.vars[i], "_in"), paste0(rr.vars[j], "_in")] <- 
+        covMat_c[paste0(rr.vars[j], "_in"), paste0(rr.vars[i], "_in")] <- 
+        bv.cov["partner-partner covariance"]
+      covMat_c[paste0(rr.vars[i], "_out"), paste0(rr.vars[j], "_in")] <- 
+        covMat_c[paste0(rr.vars[j], "_in"), paste0(rr.vars[i], "_out")] <- 
+        bv.cov["actor-partner covariance"]
+      covMat_c[paste0(rr.vars[i], "_in"), paste0(rr.vars[j], "_out")] <- 
+        covMat_c[paste0(rr.vars[j], "_out"), paste0(rr.vars[i], "_in")] <- 
+        bv.cov["partner-actor covariance"]
+      
+      covMat_d[paste0(rr.vars[i], "_ij"), paste0(rr.vars[j], "_ij")] <- 
+        covMat_d[paste0(rr.vars[j], "_ij"), paste0(rr.vars[i], "_ij")] <- 
+        covMat_d[paste0(rr.vars[i], "_ji"), paste0(rr.vars[j], "_ji")] <- 
+        covMat_d[paste0(rr.vars[j], "_ji"), paste0(rr.vars[i], "_ji")] <- 
+        bv.cov["intrapersonal relationship covariance"]
+      
+      covMat_d[paste0(rr.vars[i], "_ij"), paste0(rr.vars[j], "_ji")] <- 
+        covMat_d[paste0(rr.vars[j], "_ji"), paste0(rr.vars[i], "_ij")] <- 
+        covMat_d[paste0(rr.vars[i], "_ji"), paste0(rr.vars[j], "_ij")] <- 
+        covMat_d[paste0(rr.vars[j], "_ij"), paste0(rr.vars[i], "_ji")] <- 
+        bv.cov["interpersonal relationship covariance"]
+    }
+  }
+  
+  corMat_c <- cov2cor(covMat_c)
+  corMat_d <- cov2cor(covMat_d)
+  
+  # if case-level correlation > abs(0.9) then rescale to +/-0.9 and populate srm_priors matrices
+  for (x in 2:nrow(corMat_c)) {
+    for (y in 1:(x-1)) {
+      corMat_c[x,y] <- ifelse(corMat_c[x,y]> 0.9, 0.9, 
+                              ifelse(corMat_c[x,y] < -0.9, -0.9, corMat_c[x,y]))
+      hyperpars_c <- optim(par = c(1.5, 1.5), fn = minLoss,
+                           targetCorr = corMat_c[x,y], accept.dev = precision,
+                           method = "L-BFGS-B", lower = 0)$par
+      priors$case_beta[x,y] <- hyperpars_c[1] # lower triangle
+      priors$case_beta[y,x] <- hyperpars_c[2] # upper triangle
+    }
+  }
+  
+  # if dyad-level correlation > abs(0.9) then rescale to +/-0.9, then populate srm_priors matrices 
+  corMat_d[row(corMat_d)!=col(corMat_d)] <- ifelse(corMat_d[row(corMat_d)!=col(corMat_d)] > 0.9, 0.9,
+                                                   ifelse(corMat_d[row(corMat_d)!=col(corMat_d)] < -0.9,
+                                                          -0.9, corMat_d[row(corMat_d)!=col(corMat_d)]))
+  
+  for (rr in 1:length(rr.vars)) {
+    
+    ### dyadic-- diagonal
+    dyadic_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                              targetCorr = corMat_d[paste0(rr.vars[rr], "_ij"), paste0(rr.vars[rr], "_ji")],
+                              accept.dev = precision, 
+                              method = "L-BFGS-B", lower = 0)$par
+    priors$rr_beta_a[rr,rr] <- dyadic_hyperpars[1]
+    priors$rr_beta_b[rr,rr] <- dyadic_hyperpars[2]
+    
+    if (rr > 1L) for (kk in 1:(rr-1)) { 
+      ### intra-- below diagonal
+      intra_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                               targetCorr = corMat_d[paste0(rr.vars[rr], "_ij"), paste0(rr.vars[kk], "_ij")],
+                               accept.dev = precision, 
+                               method = "L-BFGS-B", lower = 0)$par
+      priors$rr_beta_a[rr,kk] <- intra_hyperpars[1]
+      priors$rr_beta_b[rr,kk] <- intra_hyperpars[2]
+      ### inter-- above diagonal
+      inter_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                               targetCorr = corMat_d[paste0(rr.vars[rr], "_ij"), paste0(rr.vars[kk], "_ji")],
+                               accept.dev = precision, 
+                               method = "L-BFGS-B", lower = 0)$par
+      priors$rr_beta_a[kk,rr] <- inter_hyperpars[1]
+      priors$rr_beta_b[kk,rr] <- inter_hyperpars[2]
+    }
+  }
+  priors
+}
+
+# ANOVA_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#              IDin = "Partner", IDgroup = "Group", precision = 0.1,
+#              default_prior = lavaan.srm::srm_priors(data = rr.data[c("V1", "V2", "V3")]))
+
+#----
+
+# function 8: FIML-based priors----
+
+#----
 
 # function xxxx: set customised priors for MCMC stage----
 
@@ -487,16 +666,19 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
  if (priorType == "default") { # default (diffuse) priors
    srmPriors <- get("default_prior", envir = prior_env)
  } else if (priorType == "thoughtful") { # thoughtful priors
-   srmPriors <- thoughtful_priors(data = data, targetCorr = targetCorr, 
+   srmPriors <- thoughtful_priors(targetCorr = targetCorr, 
                                precision = precision, 
                                default_prior = get("default_prior", envir = prior_env))
    
  } else if (priorType == "prophetic") { # prophetic priors
-   srmPriors <- prophetic_priors(data = data, pop_corMat = pop_corMat, 
+   srmPriors <- prophetic_priors(pop_corMat = pop_corMat, 
                               pop_SDvec = pop_SDvec, precision = precision, 
                               default_prior = get("default_prior", envir = prior_env))
    
  } else if (priorType == "ANOVA") { # method-of-moments priors (ANOVA-based, `TripleR`)
+   srmPriors <- ANOVA_priors(data = data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                             IDgroup = IDgroup, precision = precision,
+                             default_prior = get("default_prior", envir = prior_env))
    
  } else if (priorType == "FIML") { # FIML-based priors (`srm`)
    
@@ -509,6 +691,8 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 #            priorType = "prophetic", precision = 0.1)
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "thoughtful",
 #            targetCorr = 0.3, precision = 0.1)
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "ANOVA",
+#            IDout = "Actor", IDin = "Partner", IDgroup = "Group", precision = 0.1)
 
 # README https://stackoverflow.com/questions/18338331/nested-function-environment-selection 
 # README https://digitheadslabnotebook.blogspot.com/2011/06/environments-in-r.html
