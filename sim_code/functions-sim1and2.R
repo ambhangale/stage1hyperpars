@@ -647,6 +647,450 @@ ANOVA_priors <- function(data, rr.vars, IDout, IDin, IDgroup,
 
 # function 8: FIML-based priors----
 
+FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
+                        multi = FALSE, default_prior) {
+  
+  rr.data <- data
+  priors <- default_prior # default priors
+  
+  library(srm)
+  library(car)
+  
+  #FIXME SEs as prior precisions only implemented for `multi = FALSE`. not necessary 
+  # to implement for `multi = TRUE`, because we are not exploring that anymore. 
+  
+  if (multi) {
+    
+    ## case syntax
+    rr_c <- paste0(rep(rr.vars, each = 2), c("@A", "@P"))
+    rrF_c <- paste0("f_", rr_c)
+    rrFLoad_c <- paste0(rrF_c, "=~1*", rr_c, "\n") # ULI constraint - default in `srm`
+    rrIcov_c <- c(paste0(rr_c, "~~0*", rr_c, "\n"),
+                  paste0(rr_c[grep("@A", rr_c)], "~~0*", rr_c[grep("@P", rr_c)], "\n")) # residual (co)v
+    rrFvar_c <- paste0(rrF_c, "~~", rrF_c, "\n") # F vars (A/P var)
+    rrFgen_c <- paste0("f_", rr.vars, "@A~~gen", rr.vars, "*f_", rr.vars, "@P\n") # generalised
+    rrFcov_c <- combn(rr.vars, m = 2, FUN = function(x) {
+      rrFAA_c <- paste0("f_", x[1], "@A~~AA", x[1], x[2], "*f_", x[2], "@A\n") # AA cov
+      rrFAP_c <- paste0("f_", x[1], "@A~~AP", x[1], x[2], "*f_", x[2], "@P\n") # AP cov
+      rrFPA_c <- paste0("f_", x[1], "@P~~PA", x[1], x[2], "*f_", x[2], "@A\n") # PA cov
+      rrFPP_c <- paste0("f_", x[1], "@P~~PP", x[1], x[2], "*f_", x[2], "@P\n") # PP cov
+      
+      c(rrFAA_c, rrFAP_c, rrFPA_c, rrFPP_c)
+    })
+    mv.syn_c <- c("%Person\n", rrFLoad_c, rrIcov_c, rrFvar_c,
+                  rrFgen_c, rrFcov_c)
+    
+    ## dyad syntax
+    rr_d <- paste0(rep(rr.vars, each = 2), c("@AP", "@PA"))
+    rrF_d <- paste0("f_", rr_d)
+    rrFLoad_d <- paste0(rrF_d, "=~1*", rr_d, "\n") # ULI constraint
+    rrIcov_d <- c(paste0(rr_d, "~~0*", rr_d, "\n"),
+                  paste0(rr_d[grep("@AP", rr_d)], "~~0*", rr_d[grep("@PA", rr_d)], "\n")) # residual (co)v
+    rrFvarAP_d <- paste0("f_", rr.vars, "@AP~~var", rr.vars, "*f_", rr.vars, "@AP\n") # AP vars
+    rrFvarPA_d <- paste0("f_", rr.vars, "@PA~~var", rr.vars, "*f_", rr.vars, "@PA\n") # PA vars
+    rrFdyad_d <- paste0("f_", rr.vars, "@AP~~dyad", rr.vars, "*f_", rr.vars, "@PA\n") # dyadic
+    rrFintra.inter_d <- combn(rr.vars, m = 2, FUN = function(x) {
+      rrFintra1_d <- paste0("f_", x[1], "@AP~~intra", x[1], x[2], "*f_", x[2], "@AP\n") # intra1
+      rrFintra2_d <- paste0("f_", x[1], "@PA~~intra", x[1], x[2], "*f_", x[2], "@PA\n") # intra2
+      rrFinter1_d <- paste0("f_", x[1], "@AP~~inter", x[1], x[2], "*f_", x[2], "@PA\n") # inter1
+      rrFinter2_d <- paste0("f_", x[1], "@PA~~inter", x[1], x[2], "*f_", x[2], "@AP\n") # inter2
+      c(rrFintra1_d, rrFintra2_d, rrFinter1_d, rrFinter2_d)
+    }) # intra + inter
+    mv.syn_d <- c("%Dyad\n", rrFLoad_d, rrIcov_d, rrFvarAP_d, rrFvarPA_d, rrFdyad_d,
+                  rrFintra.inter_d)
+    
+    mv.syn <- paste0(c(mv.syn_c, mv.syn_d))
+    
+    mv.fit <- srm(model.syntax = mv.syn, data = rr.data, rrgroup_name = IDgroup,
+                  person_names = c(IDout, IDin), 
+                  fixed.groups = FALSE,
+                  verbose = FALSE)
+    
+    ## populate case-level hyperparameters
+    MIcov_c <- mv.fit$sigma$U[[1]] # case-level model-implied covmat
+    MIdimNames_c <- c(rrF_c[grep("@A", rrF_c)], rrF_c[grep("@P", rrF_c)]) # `srm` stores in a different order
+    dimnames(MIcov_c) <- list(MIdimNames_c, MIdimNames_c)
+    MIcov_c <- MIcov_c[rrF_c, rrF_c] # rearrange to same order as srm_priors() function
+    for(x in 1:nrow(MIcov_c)) {
+      for (y in 1:ncol(MIcov_c)) {
+        if (x == y) {
+          next
+        } else {
+          if (MIcov_c[x,x] > 0 && MIcov_c[y,y] > 0) {
+            MIcor_c <- MIcov_c[x,y] / sqrt(MIcov_c[x,x]*MIcov_c[y,y]) 
+            MIcor_c <- ifelse(MIcor_c > 0.9, 0.9, 
+                              ifelse(MIcor_c < -0.9, -0.9, MIcor_c)) # rescale large correlations
+            hyperpars_c <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                 targetCorr = MIcor_c, accept.dev = precision,
+                                 method = "L-BFGS-B", lower = 0)$par # alpha and beta parameters
+            
+            priors$case_beta[x,y] <- hyperpars_c[1] # lower triangle
+            priors$case_beta[y,x] <- hyperpars_c[2] # upper triangle
+          } else {
+            priors$case_beta[x,y] <- priors$case_beta[y,x] <- 1.5
+          } 
+        }
+      }
+    }
+    diag(MIcov_c) <- ifelse(diag(MIcov_c) < 0, 0, diag(MIcov_c)) # rescale negative variances before assigning to SD t-priors
+    MISDs_c <- sqrt(diag(MIcov_c))
+    priors$rr_in_t$m <- MISDs_c[grep("@P", names(MISDs_c))]
+    priors$rr_out_t$m <- MISDs_c[grep("@A", names(MISDs_c))]
+    priors$rr_in_t$sd <- priors$rr_out_t$sd <- precision # incoming effects priors
+    
+    ## populate dyad-level hyperparameters
+    MIcov_d <- mv.fit$sigma$D[[1]] # dyad-level model-implied covmat
+    MIdimNames_d <- gsub("@AP", "_ij", gsub("@PA", "_ji", gsub("f_", "", rrF_d)))
+    dimnames(MIcov_d) <- list(MIdimNames_d, MIdimNames_d) # change names---make assignment to prior mats easy
+    
+    for (rr in 1:length(rr.vars)) {
+      if (MIcov_d[paste0(rr.vars[rr], "_ij"), paste0(rr.vars[rr], "_ij")] <= 0) { #FIXME--- am i doing the ifelse statements incorrectly?
+        priors$rr_beta_a[rr,rr] <- priors$rr_beta_b[rr,rr] <- 1.5
+      } else {
+        ### dyadic-- diagonal
+        MIdyadic_d <- MIcov_d[paste0(rr.vars[rr], "_ij"), 
+                              paste0(rr.vars[rr], "_ji")] / MIcov_d[paste0(rr.vars[rr], "_ij"), 
+                                                                    paste0(rr.vars[rr], "_ij")]
+        MIdyadic_d <- ifelse(MIdyadic_d > 0.9, 0.9, 
+                             ifelse(MIdyadic_d < -0.9, -0.9, MIdyadic_d)) # rescale large correlations
+        dyadic_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                  targetCorr = MIdyadic_d,
+                                  accept.dev = precision, 
+                                  method = "L-BFGS-B", lower = 0)$par
+        priors$rr_beta_a[rr,rr] <- dyadic_hyperpars[1]
+        priors$rr_beta_b[rr,rr] <- dyadic_hyperpars[2]
+        
+        if (rr > 1L) for (kk in 1:(rr-1)) {
+          if (MIcov_d[paste0(rr.vars[kk], "_ij"), paste0(rr.vars[kk], "_ij")] <= 0 | 
+              MIcov_d[paste0(rr.vars[rr], "_ij"), paste0(rr.vars[rr], "_ij")] <= 0) {
+            priors$rr_beta_a[rr,kk] <- priors$rr_beta_b[rr,kk] <- 
+              priors$rr_beta_a[kk,rr] <- priors$rr_beta_b[kk,rr] <- 1.5
+          } else {
+            ### intra-- below diagonal
+            MIintra_d <- MIcov_d[paste0(rr.vars[rr], "_ij"), 
+                                 paste0(rr.vars[kk], "_ij")] / sqrt(MIcov_d[paste0(rr.vars[rr], "_ij"), 
+                                                                            paste0(rr.vars[rr], "_ij")] * 
+                                                                      MIcov_d[paste0(rr.vars[kk], "_ij"), 
+                                                                              paste0(rr.vars[kk], "_ij")])
+            MIintra_d <- ifelse(MIintra_d > 0.9, 0.9, 
+                                ifelse(MIintra_d < -0.9, -0.9, MIintra_d)) # rescale large correlations
+            intra_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                     targetCorr = MIintra_d,
+                                     accept.dev = precision, 
+                                     method = "L-BFGS-B", lower = 0)$par
+            priors$rr_beta_a[rr,kk] <- intra_hyperpars[1]
+            priors$rr_beta_b[rr,kk] <- intra_hyperpars[2]
+            ### inter-- above diagonal
+            MIinter_d <- MIcov_d[paste0(rr.vars[rr], "_ij"), 
+                                 paste0(rr.vars[kk], "_ji")] / sqrt(MIcov_d[paste0(rr.vars[rr], "_ij"), 
+                                                                            paste0(rr.vars[rr], "_ij")] * 
+                                                                      MIcov_d[paste0(rr.vars[kk], "_ij"), 
+                                                                              paste0(rr.vars[kk], "_ij")])
+            MIinter_d <- ifelse(MIinter_d > 0.9, 0.9, 
+                                ifelse(MIinter_d < -0.9, -0.9, MIinter_d)) # rescale large correlations
+            inter_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                     targetCorr = MIinter_d,
+                                     accept.dev = precision, 
+                                     method = "L-BFGS-B", lower = 0)$par
+            priors$rr_beta_a[kk,rr] <- inter_hyperpars[1]
+            priors$rr_beta_b[kk,rr] <- inter_hyperpars[2]
+          }
+        }
+      }
+    }
+    diag(MIcov_d) <- ifelse(diag(MIcov_d) < 0, 0, diag(MIcov_d)) # rescale negative variances before assigning to SD t-priors
+    MISDs_d <- sqrt(diag(MIcov_d))
+    priors$rr_rel_t$m <- MISDs_d[grep("_ij", names(MISDs_d))]
+    priors$rr_rel_t$sd <- precision
+  } else {
+    
+    for (rr in 1:length(rr.vars)) {
+      # uvSRM
+      uv.syn <- paste0("%Person\n",
+                       "f_", rr.vars[rr], "@A=~1*", rr.vars[rr], "@A\n", 
+                       "f_", rr.vars[rr], "@P=~1*", rr.vars[rr], "@P\n", # F loadings
+                       
+                       rr.vars[rr], "@A~~0*", rr.vars[rr], "@A+0*", rr.vars[rr], "@P\n",
+                       rr.vars[rr], "@P~~0*", rr.vars[rr], "@P\n", # residual (co)v
+                       
+                       "f_", rr.vars[rr], "@A~~f_", rr.vars[rr], "@A+f_", rr.vars[rr], "@P\n",
+                       "f_", rr.vars[rr], "@P~~f_", rr.vars[rr], "@P\n", # A/P var + gen cov
+                       
+                       "%Dyad\n",
+                       "f_", rr.vars[rr], "@AP=~1*", rr.vars[rr], "@AP\n",
+                       "f_", rr.vars[rr], "@PA=~1*", rr.vars[rr], "@PA\n", # F loadings
+                       
+                       rr.vars[rr], "@AP~~0*", rr.vars[rr], "@AP+0*", rr.vars[rr], "@PA\n",
+                       rr.vars[rr], "@PA~~0*", rr.vars[rr], "@PA\n", # residual (co)v
+                       
+                       "f_", rr.vars[rr], "@AP~~var", rr.vars[rr], "*f_", rr.vars[rr], "@AP+f_", rr.vars[rr], "@PA\n",
+                       "f_", rr.vars[rr], "@PA~~var", rr.vars[rr], "*f_", rr.vars[rr], "@PA") # AP/PA var + dyadic cov
+      
+      uv.fit <- srm(model.syntax = uv.syn, data = rr.data, rrgroup_name = IDgroup,
+                    person_names = c(IDout, IDin), 
+                    fixed.groups = FALSE,
+                    verbose = FALSE)
+      
+      MIuvcov_c <- uv.fit$sigma$U[[1]]
+      MIuvdimNames_c <- paste0(rep(rr.vars[rr], each = 2), c("@A", "@P")) 
+      dimnames(MIuvcov_c) <- list(MIuvdimNames_c, MIuvdimNames_c)
+      if (MIuvcov_c[paste0(rr.vars[rr], "@A"), paste0(rr.vars[rr], "@A")] >= 0) { # if actor var > 0
+        AvarDelta_c <- deltaMethod(uv.fit, g. = paste0("sqrt(`f_", rr.vars[rr], "@A~~f_", rr.vars[rr], "@A`)"))
+        priors$rr_out_t[rr.vars[rr], "m"] <- AvarDelta_c$Estimate
+        priors$rr_out_t[rr.vars[rr], "sd"] <- ifelse(!is.null(precision), precision, AvarDelta_c$SE)
+      } else {
+        priors$rr_out_t[rr.vars[rr], "m"] <- 0
+        priors$rr_out_t[rr.vars[rr], "sd"] <- ifelse(!is.null(precision), precision,
+                                                     uv.fit$parm.table[uv.fit$parm.table$par_names == 
+                                                                         paste0("f_", rr.vars[rr],
+                                                                                "@A~~f_", rr.vars[rr], "@A"), "se"])
+      }
+      if (MIuvcov_c[paste0(rr.vars[rr], "@P"), paste0(rr.vars[rr], "@P")] >= 0) { # if partner var > 0
+        PvarDelta_c <- deltaMethod(uv.fit, g. = paste0("sqrt(`f_", rr.vars[rr], "@P~~f_", rr.vars[rr], "@P`)"))
+        priors$rr_in_t[rr.vars[rr], "m"] <- PvarDelta_c$Estimate
+        priors$rr_in_t[rr.vars[rr], "sd"] <- ifelse(!is.null(precision), precision, PvarDelta_c$SE)
+      } else {
+        priors$rr_in_t[rr.vars[rr], "m"] <- 0
+        priors$rr_in_t[rr.vars[rr], "sd"] <- ifelse(!is.null(precision), precision, 
+                                                    uv.fit$parm.table[uv.fit$parm.table$par_names == 
+                                                                        paste0("f_", rr.vars[rr],
+                                                                               "@P~~f_", rr.vars[rr], "@P"), "se"])
+      }
+      if (MIuvcov_c[paste0(rr.vars[rr], "@A"), paste0(rr.vars[rr], "@A")] > 0 && 
+          MIuvcov_c[paste0(rr.vars[rr], "@P"), paste0(rr.vars[rr], "@P")] > 0) { # if both actor & partner var >0
+        
+        ## generalised cor
+        uvcorDelta_c <- deltaMethod(uv.fit, g. = paste0("`f_", rr.vars[rr], "@A~~f_", rr.vars[rr], "@P`/(sqrt(`f_", 
+                                                        rr.vars[rr], "@A~~f_", rr.vars[rr], "@A`*`f_", 
+                                                        rr.vars[rr], "@P~~f_", rr.vars[rr], "@P`))"))
+        MIuvcor_c <- uvcorDelta_c$Estimate
+        MIuvcorSE_c <- uvcorDelta_c$SE
+        MIuvcor_c <- ifelse(MIuvcor_c > 0.9, 0.9, ifelse(MIuvcor_c < -0.9, -0.9, MIuvcor_c))
+        genR_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                targetCorr = MIuvcor_c, 
+                                accept.dev = ifelse(!is.null(precision), precision, MIuvcorSE_c),
+                                method = "L-BFGS-B", lower = 0)$par
+        priors$case_beta[paste0(rr.vars[rr],"_in"),paste0(rr.vars[rr],"_out")] <- genR_hyperpars[1] # lower triangle
+        priors$case_beta[paste0(rr.vars[rr],"_out"),paste0(rr.vars[rr],"_in")] <- genR_hyperpars[2] # upper triangle
+        
+      } else {
+        priors$case_beta[paste0(rr.vars[rr],"_in"),
+                         paste0(rr.vars[rr],"_out")] <- priors$case_beta[paste0(rr.vars[rr],"_out"),
+                                                                         paste0(rr.vars[rr],"_in")] <- 1.5
+      }
+      
+      MIuvcov_d <- uv.fit$sigma$D[[1]]
+      MIuvdimNames_d <- paste0(rep(rr.vars[rr], each = 2), c("@AP", "@PA"))
+      dimnames(MIuvcov_d) <- list(MIuvdimNames_d, MIuvdimNames_d)
+      if (MIuvcov_d[paste0(rr.vars[rr], "@AP"), paste0(rr.vars[rr], "@AP")] > 0) { # if rel var > 0
+        uvcorDelta_d <- deltaMethod(uv.fit, g. = paste0("`f_", rr.vars[rr], "@AP~~f_", rr.vars[rr], "@PA`/`f_", 
+                                                        rr.vars[rr], "@AP~~f_", rr.vars[rr], "@AP`"))
+        MIuvcor_d <- uvcorDelta_d$Estimate
+        MIuvcorSE_d <- uvcorDelta_d$SE
+        MIuvcor_d <- ifelse(MIuvcor_d > 0.9, 0.9, ifelse(MIuvcor_d < -0.9, -0.9, MIuvcor_d))
+        dyadicR_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                   targetCorr = MIuvcor_d, 
+                                   accept.dev = ifelse(!is.null(precision), precision, MIuvcorSE_d),
+                                   method = "L-BFGS-B", lower = 0)$par 
+        priors$rr_beta_a[rr,rr] <- dyadicR_hyperpars[1]
+        priors$rr_beta_b[rr,rr] <- dyadicR_hyperpars[2]
+        
+        relvarDelta_c <- deltaMethod(uv.fit, g. = paste0("sqrt(`f_", rr.vars[rr], "@AP~~f_", rr.vars[rr], "@AP`)"))
+        priors$rr_rel_t[rr.vars[rr], "m"] <- relvarDelta_c$Estimate
+        priors$rr_rel_t[rr.vars[rr], "sd"] <- ifelse(!is.null(precision), precision, relvarDelta_c$SE)
+      } else {
+        priors$rr_beta_a[rr,rr] <- priors$rr_beta_b[rr,rr] <- 1.5
+        
+        priors$rr_rel_t[rr.vars[rr], "m"] <- 0
+        priors$rr_rel_t[rr.vars[rr], "sd"] <- ifelse(!is.null(precision), precision,
+                                                     uv.fit$parm.table[uv.fit$parm.table$par_names == 
+                                                                         paste0("f_", rr.vars[rr],
+                                                                                "@AP~~f_", rr.vars[rr], "@AP"), "se"])
+      }
+      
+      if (rr > 1L) for (kk in 1:(rr-1)) {
+        # bvSRM
+        bv.syn <- paste0("%Person\n",
+                         "f_", rr.vars[rr], "@A=~1*", rr.vars[rr], "@A\n",
+                         "f_", rr.vars[kk], "@A=~1*", rr.vars[kk], "@A\n",
+                         
+                         "f_", rr.vars[rr], "@P=~1*", rr.vars[rr], "@P\n",
+                         "f_", rr.vars[kk], "@P=~1*", rr.vars[kk], "@P\n",
+                         
+                         rr.vars[rr], "@A~~0*", rr.vars[rr], "@A+0*", rr.vars[rr], "@P\n",
+                         rr.vars[rr], "@P~~0*", rr.vars[rr], "@P\n",
+                         rr.vars[kk], "@A~~0*", rr.vars[kk], "@A+0*", rr.vars[kk], "@P\n",
+                         rr.vars[kk], "@P~~0*", rr.vars[kk], "@P\n",
+                         
+                         "f_", rr.vars[rr], "@A~~f_", rr.vars[rr], "@A+f_", rr.vars[rr], "@P+f_", rr.vars[kk], "@A+f_", rr.vars[kk], "@P\n",
+                         "f_", rr.vars[kk], "@A~~f_", rr.vars[kk], "@A+f_", rr.vars[kk], "@P+f_", rr.vars[rr], "@P\n",
+                         "f_", rr.vars[rr], "@P~~f_", rr.vars[rr], "@P+f_", rr.vars[kk], "@P\n",
+                         "f_", rr.vars[kk], "@P~~f_", rr.vars[kk], "@P\n",
+                         
+                         "%Dyad\n",
+                         "f_", rr.vars[rr], "@AP=~1*", rr.vars[rr], "@AP\n",
+                         "f_", rr.vars[kk], "@AP=~1*", rr.vars[kk], "@AP\n",
+                         
+                         "f_", rr.vars[rr], "@PA=~1*", rr.vars[rr], "@PA\n",
+                         "f_", rr.vars[kk], "@PA=~1*", rr.vars[kk], "@PA\n",
+                         
+                         rr.vars[rr], "@AP~~0*", rr.vars[rr], "@AP+0*", rr.vars[rr], "@PA\n",
+                         rr.vars[rr], "@PA~~0*", rr.vars[rr], "@PA\n",
+                         rr.vars[kk], "@AP~~0*", rr.vars[kk], "@AP+0*", rr.vars[kk], "@PA\n",
+                         rr.vars[kk], "@PA~~0*", rr.vars[kk], "@PA\n",
+                         
+                         "f_", rr.vars[rr], "@AP~~var", rr.vars[rr], "*f_", rr.vars[rr], "@AP+dyad", 
+                         rr.vars[rr], "*f_", rr.vars[rr], "@PA+intra", rr.vars[rr], 
+                         rr.vars[kk], "*f_", rr.vars[kk], "@AP+inter", rr.vars[rr], 
+                         rr.vars[kk], "*f_", rr.vars[kk], "@PA\n",
+                         "f_", rr.vars[kk], "@AP~~var", rr.vars[kk],"*f_", rr.vars[kk], 
+                         "@AP+dyad", rr.vars[kk],"*f_", rr.vars[kk], "@PA+inter", 
+                         rr.vars[rr], rr.vars[kk], "*f_", rr.vars[rr], "@PA\n",
+                         "f_", rr.vars[rr], "@PA~~var", rr.vars[rr], "*f_", rr.vars[rr], 
+                         "@PA+intra", rr.vars[rr], rr.vars[kk], "*f_", rr.vars[kk], "@PA\n",
+                         "f_", rr.vars[kk], "@PA~~var", rr.vars[kk],"*f_", rr.vars[kk], "@PA")
+        
+        bv.fit <- srm(model.syntax = bv.syn, data = rr.data, rrgroup_name = IDgroup,
+                      person_names = c(IDout, IDin), 
+                      fixed.groups = FALSE,
+                      verbose = FALSE)
+        
+        # case-level hyperparameters
+        MIbvcov_c <- bv.fit$sigma$U[[1]]
+        MIbvdimNames_c <- c(paste0(c(rr.vars[kk], rr.vars[rr]), "@A"),
+                            paste0(c(rr.vars[kk], rr.vars[rr]), "@P"))
+        dimnames(MIbvcov_c) <- list(MIbvdimNames_c, MIbvdimNames_c)
+        ## AA
+        if (MIbvcov_c[paste0(rr.vars[rr], "@A"), paste0(rr.vars[rr], "@A")] > 0 &&
+            MIbvcov_c[paste0(rr.vars[kk], "@A"), paste0(rr.vars[kk], "@A")] > 0) {
+          bvAADelta_c <- deltaMethod(bv.fit, g. = paste0("`f_", rr.vars[rr], "@A~~f_", rr.vars[kk], "@A`/(sqrt(`f_", 
+                                                         rr.vars[rr], "@A~~f_", rr.vars[rr], "@A`*`f_", 
+                                                         rr.vars[kk], "@A~~f_", rr.vars[kk], "@A`))"))
+          AA_c <- bvAADelta_c$Estimate
+          AASE_c <- bvAADelta_c$SE
+          AA_c <- ifelse(AA_c > 0.9, 0.9, ifelse(AA_c < -0.9, -0.9, AA_c))
+          AA_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                targetCorr = AA_c, 
+                                accept.dev = ifelse(!is.null(precision), precision, AASE_c),
+                                method = "L-BFGS-B", lower = 0)$par ## AA corr
+          priors$case_beta[paste0(rr.vars[rr], "_out"), paste0(rr.vars[kk], "_out")] <- AA_hyperpars[1] # lower triangle
+          priors$case_beta[paste0(rr.vars[kk], "_out"), paste0(rr.vars[rr], "_out")] <- AA_hyperpars[2] # upper triangle
+        } else {
+          priors$case_beta[paste0(rr.vars[rr], "_out"), 
+                           paste0(rr.vars[kk], "_out")] <- priors$case_beta[paste0(rr.vars[kk], "_out"), 
+                                                                            paste0(rr.vars[rr], "_out")] <- 1.5
+        }
+        ## AP
+        if (MIbvcov_c[paste0(rr.vars[rr], "@A"), paste0(rr.vars[rr], "@A")] > 0 &&
+            MIbvcov_c[paste0(rr.vars[kk], "@P"), paste0(rr.vars[kk], "@P")] > 0) {
+          bvAPDelta_c <- deltaMethod(bv.fit, g. = paste0("`f_", rr.vars[rr], "@A~~f_", rr.vars[kk], "@P`/(sqrt(`f_", 
+                                                         rr.vars[rr], "@A~~f_", rr.vars[rr], "@A`*`f_", 
+                                                         rr.vars[kk], "@P~~f_", rr.vars[kk], "@P`))"))
+          AP_c <- bvAPDelta_c$Estimate
+          APSE_c <- bvAPDelta_c$SE
+          AP_c <- ifelse(AP_c > 0.9, 0.9, ifelse(AP_c < -0.9, -0.9, AP_c))
+          AP_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                targetCorr = AP_c, 
+                                accept.dev = ifelse(!is.null(precision), precision, APSE_c),
+                                method = "L-BFGS-B", lower = 0)$par ## AP corr
+          priors$case_beta[paste0(rr.vars[rr], "_out"), paste0(rr.vars[kk], "_in")] <- AP_hyperpars[1] # lower triangle
+          priors$case_beta[paste0(rr.vars[kk], "_in"), paste0(rr.vars[rr], "_out")] <- AP_hyperpars[2] # upper triangle
+        } else {
+          priors$case_beta[paste0(rr.vars[rr], "_out"), 
+                           paste0(rr.vars[kk], "_in")] <- priors$case_beta[paste0(rr.vars[kk], "_in"), 
+                                                                           paste0(rr.vars[rr], "_out")] <- 1.5
+        }
+        ## PA
+        if (MIbvcov_c[paste0(rr.vars[rr], "@P"), paste0(rr.vars[rr], "@P")] > 0 &&
+            MIbvcov_c[paste0(rr.vars[kk], "@A"), paste0(rr.vars[kk], "@A")] > 0) {
+          bvPADelta_c <- deltaMethod(bv.fit, g. = paste0("`f_", rr.vars[kk], "@A~~f_", rr.vars[rr], "@P`/(sqrt(`f_", 
+                                                         rr.vars[rr], "@P~~f_", rr.vars[rr], "@P`*`f_", 
+                                                         rr.vars[kk], "@A~~f_", rr.vars[kk], "@A`))"))
+          PA_c <- bvPADelta_c$Estimate
+          PASE_c <- bvPADelta_c$SE
+          PA_c <- ifelse(PA_c > 0.9, 0.9, ifelse(PA_c < -0.9, -0.9, PA_c))
+          PA_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                targetCorr = PA_c, 
+                                accept.dev = ifelse(!is.null(precision), precision, PASE_c),
+                                method = "L-BFGS-B", lower = 0)$par ## PA corr
+          priors$case_beta[paste0(rr.vars[rr], "_in"), paste0(rr.vars[kk], "_out")] <- PA_hyperpars[1] # lower triangle
+          priors$case_beta[paste0(rr.vars[kk], "_out"), paste0(rr.vars[rr], "_in")] <- PA_hyperpars[2] # upper triangle
+          
+        } else {
+          priors$case_beta[paste0(rr.vars[rr], "_in"), 
+                           paste0(rr.vars[kk], "_out")] <- priors$case_beta[paste0(rr.vars[kk], "_out"), 
+                                                                            paste0(rr.vars[rr], "_in")] <- 1.5
+        }
+        ## PP
+        if (MIbvcov_c[paste0(rr.vars[rr], "@P"), paste0(rr.vars[rr], "@P")] > 0 &&
+            MIbvcov_c[paste0(rr.vars[kk], "@P"), paste0(rr.vars[kk], "@P")] > 0) {
+          
+          bvPPDelta_c <- deltaMethod(bv.fit, g. = paste0("`f_", rr.vars[rr], "@P~~f_", rr.vars[kk], "@P`/(sqrt(`f_", 
+                                                         rr.vars[rr], "@P~~f_", rr.vars[rr], "@P`*`f_", 
+                                                         rr.vars[kk], "@P~~f_", rr.vars[kk], "@P`))"))
+          PP_c <- bvPPDelta_c$Estimate
+          PPSE_c <- bvPPDelta_c$SE
+          PP_c <- ifelse(PP_c > 0.9, 0.9, ifelse(PP_c < -0.9, -0.9, PP_c))
+          PP_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                targetCorr = PP_c, 
+                                accept.dev = ifelse(!is.null(precision), precision, PPSE_c),
+                                method = "L-BFGS-B", lower = 0)$par ## PA corr
+          priors$case_beta[paste0(rr.vars[rr], "_in"), paste0(rr.vars[kk], "_in")] <- PP_hyperpars[1] # lower triangle
+          priors$case_beta[paste0(rr.vars[kk], "_in"), paste0(rr.vars[rr], "_in")] <- PP_hyperpars[2] # upper triangle
+        } else {
+          priors$case_beta[paste0(rr.vars[rr], "_in"), 
+                           paste0(rr.vars[kk], "_in")] <- priors$case_beta[paste0(rr.vars[kk], "_in"), 
+                                                                           paste0(rr.vars[rr], "_in")] <- 1.5
+        }
+        
+        # dyad-level hyperparameters
+        MIbvcov_d <- bv.fit$sigma$D[[1]]
+        MIbvdimNames_d <- c(paste0(rep(rr.vars[kk], times = 2), c("@AP", "@PA")), 
+                            paste0(rep(rr.vars[rr], times = 2), c("@AP", "@PA"))) #FIXME maybe just directly specify _ij/ji here?
+        dimnames(MIbvcov_d) <- list(MIbvdimNames_d, MIbvdimNames_d)
+        if (MIbvcov_d[paste0(rr.vars[rr], "@AP"), paste0(rr.vars[rr], "@AP")] > 0 && 
+            MIbvcov_d[paste0(rr.vars[kk], "@AP"), paste0(rr.vars[kk], "@AP")] > 0) {
+          ### intra-- below diagonal
+          bvintraDelta_d <- deltaMethod(bv.fit, g. = paste0("`f_", rr.vars[rr], "@AP~~f_", rr.vars[kk], "@AP`/(sqrt(`f_", 
+                                                            rr.vars[rr], "@AP~~f_", rr.vars[rr], "@AP`*`f_", 
+                                                            rr.vars[kk], "@AP~~f_", rr.vars[kk], "@AP`))"))
+          intra_d <- bvintraDelta_d$Estimate
+          intraSE_d <- bvintraDelta_d$SE
+          intra_d <- ifelse(intra_d > 0.9, 0.9, ifelse(intra_d < -0.9, -0.9, intra_d))
+          intra_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                   targetCorr = intra_d,
+                                   accept.dev = ifelse(!is.null(precision), precision, intraSE_d), 
+                                   method = "L-BFGS-B", lower = 0)$par
+          priors$rr_beta_a[rr,kk] <- intra_hyperpars[1]
+          priors$rr_beta_b[rr,kk] <- intra_hyperpars[2]
+          
+          ### inter-- above diagonal
+          bvinterDelta_d <- deltaMethod(bv.fit, g. = paste0("`f_", rr.vars[kk], "@AP~~f_", rr.vars[rr], "@PA`/(sqrt(`f_", 
+                                                            rr.vars[rr], "@AP~~f_", rr.vars[rr], "@AP`*`f_", 
+                                                            rr.vars[kk], "@AP~~f_", rr.vars[kk], "@AP`))"))
+          inter_d <- bvinterDelta_d$Estimate
+          interSE_d <- bvinterDelta_d$SE
+          inter_d <- ifelse(inter_d > 0.9, 0.9, ifelse(inter_d < -0.9, -0.9, inter_d))
+          inter_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss,
+                                   targetCorr = inter_d,
+                                   accept.dev = ifelse(!is.null(precision), precision, interSE_d), 
+                                   method = "L-BFGS-B", lower = 0)$par
+          priors$rr_beta_a[kk,rr] <- inter_hyperpars[1]
+          priors$rr_beta_b[kk,rr] <- inter_hyperpars[2]
+        } else {
+          priors$rr_beta_a[rr,kk] <- priors$rr_beta_b[rr,kk] <- 
+            priors$rr_beta_a[kk,rr] <- priors$rr_beta_b[kk,rr] <- 1.5
+        }
+      }
+    }
+  }
+  priors
+}
+
+# FIML_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#              IDin = "Partner", IDgroup = "Group", precision = 0.1, multi = FALSE,
+#              default_prior = lavaan.srm::srm_priors(data = rr.data[c("V1", "V2", "V3")]))
+
 #----
 
 # function xxxx: set customised priors for MCMC stage----
@@ -681,7 +1125,9 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
                              default_prior = get("default_prior", envir = prior_env))
    
  } else if (priorType == "FIML") { # FIML-based priors (`srm`)
-   
+   srmPriors <- FIML_priors(data = data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                            IDgroup = IDgroup, precision = precision, multi = multiMLE,
+                            default_prior = get("default_prior", envir = prior_env))
  }
  return(srmPriors)
 }
@@ -693,6 +1139,10 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 #            targetCorr = 0.3, precision = 0.1)
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "ANOVA",
 #            IDout = "Actor", IDin = "Partner", IDgroup = "Group", precision = 0.1)
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "FIML",
+#            IDout = "Actor", IDin = "Partner", IDgroup = "Group", 
+#            multiMLE = FALSE, precision = 0.1)
+
 
 # README https://stackoverflow.com/questions/18338331/nested-function-environment-selection 
 # README https://digitheadslabnotebook.blogspot.com/2011/06/environments-in-r.html
