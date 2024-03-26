@@ -11,10 +11,10 @@
 # getwd()
 
 # MCSampID = 1; n = 5; G = 3
-# rr.data <- genGroups(MCSampID = MCSampID, n = n, G = G)
+# rr.data <- genGroups(MCSampID = 1, n = 5, G = 3)
 # rr.vars <- c("V1", "V2", "V3")
 # IDout <- "Actor"; IDin <- "Partner"; IDgroup <- "Group"
-# precision < 0.1
+# precision <- 0.1
 # targetCorr <- 0.3
 
 # function 0: generate level-specific (co)variance matrices----
@@ -326,14 +326,18 @@ visBeta <- function(a, b, var1, var2, ...) {
 
 # function 5: thoughtful priors----
 
-thoughtful_priors <- function(data, targetCorr, precision) {
-  # SDs
+thoughtful_priors <- function(data, targetCorr, precision, default_prior) {
+  
+  priors <- default_prior
+  
+  # for SDs --- t-priors
   ## m for SDs is already thoughtful/approximate location because lavaan.srm estimates
   ## it based on the data
   priors$rr_in_t$sd <- priors$rr_out_t$sd <- 
     priors$rr_rel_t$sd <- rep(precision, times = 3) # set SD of t-priors to 0.1
   
-  # correlations --- same thoughtful targetCorr for all correlations at both case and dyad level
+  # for correlations --- beta priors
+  ## same thoughtful targetCorr for all correlations at both case and dyad level
   corr_hyperpars <- optim(par = c(1.5, 1.5), fn = minLoss, targetCorr = targetCorr, 
                           accept.dev = precision, method = "L-BFGS-B", lower = 0)
   
@@ -353,41 +357,161 @@ thoughtful_priors <- function(data, targetCorr, precision) {
   return(priors)
 }
 
-# thoughtful_priors(data = rr.data, targetCorr = 0.3, precision = 0.1)
+# thoughtful_priors(data = rr.data, targetCorr = 0.3, precision = 0.1,
+#                   default_prior = lavaan.srm::srm_priors(data = rr.data[c("V1", "V2", "V3")]))
 
 #----
 
 # function 6: prophetic priors----
 
-prophetic_priors <- function(data, pop_corMat = list(pop_c = getSigma()$R_c, 
-                                                     pop_d = getSigma()$R_d), precision)
+prophetic_priors <- function(data, pop_corMat, pop_SDvec, precision, default_prior) {
+  
+  priors <- default_prior
+  
+  # for SDs --- t-priors
+  popSD_c <- pop_SDvec$popSD_c
+  popSD_d <- pop_SDvec$popSD_d
+  
+  priors$rr_in_t$m <- popSD_c[4:6] # incoming 
+  priors$rr_out_t$m <- popSD_c[1:3] # outgoing
+  priors$rr_rel_t$m <- popSD_d[c(1, 3, 5)] # relationship
+  
+  priors$rr_in_t$sd <- priors$rr_out_t$sd <- 
+    priors$rr_rel_t$sd <- rep(precision, times = 3) # set SD of t-priors to 0.1
+  
+  # for correlations --- beta priors
+  ## begin: case-level hyperpars----
+  popCorr_c <- pop_corMat$popCorr_c
+  Fnames_c <- c("f1@A", "f1@P", "f2@A", "f2@P", "f3@A", "f3@P")
+  popCorr_c <- popCorr_c[Fnames_c, Fnames_c]
+  
+  # save  population correlation values
+  targetVals_c <- list(gen1 = popCorr_c[2,1], ee21 = popCorr_c[3,1], 
+                      ae21 = popCorr_c[4,1], ee31 = popCorr_c[5,1], 
+                      ae31 = popCorr_c[6,1], ea21 = popCorr_c[3,2], 
+                      aa21 = popCorr_c[4,2], ea31 = popCorr_c[5,2], 
+                      aa31 = popCorr_c[6,2], gen2 = popCorr_c[4,3], 
+                      ee32 = popCorr_c[5,3], ae32 = popCorr_c[6,3],
+                      ea32 = popCorr_c[5,4], aa32 = popCorr_c[6,4],
+                      gen3 = popCorr_c[6,5])
+  
+  newHyperpars_c <- mapply(function(tc, ...) optim(par = c(1.5, 1.5), fn = minLoss, ...)$par, 
+                       targetCorr = targetVals_c, accept.dev = precision,
+                       method = "L-BFGS-B", lower = 0, SIMPLIFY = FALSE)
+  
+  # save the new (strongly informative) alpha and beta parameters
+  alpha_c <- sapply(newHyperpars_c, "[[", 1)
+  beta_c <- sapply(newHyperpars_c, "[[", 2)
+  
+  # populate alpha hyperpars
+  priors$case_beta[lower.tri(priors$case_beta, diag = FALSE)] <- alpha_c
+  
+  # populate beta parameters
+  betamat_c <- matrix(NA, 6, 6)
+  betamat_c[lower.tri(betamat_c, diag = FALSE)] <- beta_c
+  betamat_c <- t(betamat_c)
+  priors$case_beta[upper.tri(priors$case_beta, diag = FALSE)] <- 
+    betamat_c[upper.tri(betamat_c, diag = FALSE)]
+  ## end: case-level hyperpars----
+  
+  ## begin: dyad-level hyperpars----
+  popCorr_d <- pop_corMat$popCorr_d
+  
+  # saving the population correlation values
+  ## DIAG == dyadic reciprocity -- [2,1]; [4,3]; [6,5]
+  ## ABOVE = inter -- [3,2]; [5,2]; [5,4]
+  ## BELOW = intra -- [4,2]; [6,2]; [6,4]
+  targetVals_d <- list(dyad1 = popCorr_d[2,1], 
+                      dyad2 = popCorr_d[4,3], 
+                      dyad3 = popCorr_d[6,5],
+                      inter21 = popCorr_d[3,2], 
+                      inter31 = popCorr_d[5,2], 
+                      inter32 = popCorr_d[5,4],
+                      intra21 = popCorr_d[4,2], 
+                      intra31 = popCorr_d[6,2], 
+                      intra32 = popCorr_d[6,4])
+  
+  newHyperpars_d <- mapply(function(tc, ...) optim(par = c(1.5, 1.5), fn = minLoss, ...)$par, 
+                       targetCorr = targetVals_d, accept.dev = precision,
+                       method = "L-BFGS-B", lower = 0, SIMPLIFY = FALSE)
+  
+  # new hyperpars for dyadic reciprocity, interpersonal corr, and intrapersonal corr
+  dyad_alpha <- c(newHyperpars_d$dyad1[1], newHyperpars_d$dyad2[1], newHyperpars_d$dyad3[1])
+  dyad_beta <- c(newHyperpars_d$dyad1[2], newHyperpars_d$dyad2[2], newHyperpars_d$dyad3[2])
+  
+  inter_alpha <- c(newHyperpars_d$inter21[1], newHyperpars_d$inter31[1], newHyperpars_d$inter32[1])
+  inter_beta <- c(newHyperpars_d$inter21[2], newHyperpars_d$inter31[2], newHyperpars_d$inter32[2])
+  
+  intra_alpha <- c(newHyperpars_d$intra21[1], newHyperpars_d$intra31[1], newHyperpars_d$intra32[1])
+  intra_beta <- c(newHyperpars_d$intra21[2], newHyperpars_d$intra31[2], newHyperpars_d$intra32[2])
+  
+  # replace in priors tables
+  diag(priors$rr_beta_a) <- dyad_alpha
+  diag(priors$rr_beta_b) <- dyad_beta # dyadic reciprocities on diagonal
+  
+  priors$rr_beta_a[upper.tri(priors$rr_beta_a)] <- inter_alpha
+  priors$rr_beta_b[upper.tri(priors$rr_beta_b)] <- inter_beta # inter = above
+  
+  priors$rr_beta_a[lower.tri(priors$rr_beta_a)] <- intra_alpha
+  priors$rr_beta_b[lower.tri(priors$rr_beta_b)] <- intra_beta # intra = below
+  
+  ## end: dyad-level hyperpars----
+  
+  return(priors)
+}
+
+# prophetic_priors(data = rr.data, pop_corMat = list(popCorr_c = getSigma()$R_c,
+#                                                    popCorr_d = getSigma()$R_d),
+#                  pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
+#                  popSD_d = sqrt(diag(getSigma()$SIGMA_d))), precision = 0.1,
+#                  default_prior = lavaan.srm::srm_priors(data = rr.data[c("V1", "V2", "V3")]))
 
 #----
+
+# function 7:
 
 # function xxxx: set customised priors for MCMC stage----
 
 # library(lavaan.srm)
 
-set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCorr, 
+set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCorr,
+                       pop_corMat = list(popCorr_c = getSigma()$R_c,
+                                         popCorr_d = getSigma()$R_d),
+                       pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
+                                        popSD_d = sqrt(diag(getSigma()$SIGMA_d))),
                        precision, multiMLE = FALSE) {
- rr.data <- data
- priors <- srm_priors(rr.data[rr.vars]) # default MCMC priors (diffuse priors)
+  #TODO load lavaan.srm in the parent function of this one (`s1sat()`, i think?)
+  prior_env <- new.env()
+  prior_env$default_prior <- srm_priors(rr.data[rr.vars]) # default MCMC priors (diffuse priors)
  
  if (priorType == "default") { # default (diffuse) priors
-   priors
+   srmPriors <- get("default_prior", envir = prior_env)
  } else if (priorType == "thoughtful") { # thoughtful priors
-   
-   priors <- thoughtful_priors(data = rr.data, targetCorr = targetCorr, 
-                               precision = precision)
+   srmPriors <- thoughtful_priors(data = data, targetCorr = targetCorr, 
+                               precision = precision, 
+                               default_prior = get("default_prior", envir = prior_env))
    
  } else if (priorType == "prophetic") { # prophetic priors
+   srmPriors <- prophetic_priors(data = data, pop_corMat = pop_corMat, 
+                              pop_SDvec = pop_SDvec, precision = precision, 
+                              default_prior = get("default_prior", envir = prior_env))
    
  } else if (priorType == "ANOVA") { # method-of-moments priors (ANOVA-based, `TripleR`)
    
  } else if (priorType == "FIML") { # FIML-based priors (`srm`)
    
  }
- return(priors)
+ return(srmPriors)
 }
+
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "default")
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"),
+#            priorType = "prophetic", precision = 0.1)
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "thoughtful",
+#            targetCorr = 0.3, precision = 0.1)
+
+# README https://stackoverflow.com/questions/18338331/nested-function-environment-selection 
+# README https://digitheadslabnotebook.blogspot.com/2011/06/environments-in-r.html
+# README http://adv-r.had.co.nz/Environments.html#env-answers 
 
 #----
