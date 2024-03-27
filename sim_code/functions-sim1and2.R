@@ -1162,7 +1162,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   
   s1_env <- new.env()
   s1_env$dat <- genGroups(MCSampID = MCSampID, n = n, G = G)
-  t0 <- Sys.time() #FIXME check if you also added t1 later
+  t0 <- Sys.time()
   
   if (priorType == "default") { # default
     rr.data <- get("dat", envir = s1_env)
@@ -1427,7 +1427,6 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   
   dR <- merge(dR, s1dM.cortab, by = "par_names", all.x = TRUE)
   
-  
   # case-level SDs
   pSDElements <- grep(pattern = "S_p", rownames(s1long))
   pSD <- s1long[pSDElements, ] # EAPs
@@ -1448,6 +1447,10 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   s1pM.SD$par_names <- paste0(s1pM.SD$Var1, "~~", s1pM.SD$Var1)
   s1pM.SD <- subset(s1pM.SD, select = c("par_names", "Freq"))
   names(s1pM.SD)[names(s1pM.SD) == "Freq"] <- "Msd"
+  s1pM.SD$Msd.low <- summary(s1ests, component = "case", 
+                             posterior.est = "mode")$case$sd$central["lower",] # lower CI limit
+  s1pM.SD$Msd.up <- summary(s1ests, component = "case", 
+                             posterior.est = "mode")$case$sd$central["upper",] # upper CI limit
   
   pSD <- merge(pSD, s1pM.SD, by = "par_names")
   
@@ -1471,6 +1474,10 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   s1dM.SD$par_names <- paste0(s1dM.SD$Var1, "~~", s1dM.SD$Var1)
   s1dM.SD <- subset(s1dM.SD, select = c("par_names", "Freq"))
   names(s1dM.SD)[names(s1dM.SD) == "Freq"] <- "Msd"
+  s1dM.SD$Msd.low <- summary(s1ests, component = "dyad", 
+                             posterior.est = "mode")$dyad$sd$central["lower",] # lower CI limit
+  s1dM.SD$Msd.up <- summary(s1ests, component = "dyad", 
+                             posterior.est = "mode")$dyad$sd$central["upper",] # upper CI limit
   
   dSD <- merge(dSD, s1dM.SD, by = "par_names")
   
@@ -1578,7 +1585,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   SD$RunTime <- difftime(t1, t0, units = "mins")
   
   # combine covariances and correlations + SDs as list
-  out <- list(cov = Sigma, corr = R, SD = SD)
+  out <- list(cov = Sigma, cor = R, SD = SD)
   
   # end: compiling final results ----
   
@@ -1609,6 +1616,21 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
 #       precision = 0.1, multiMLE = F, iter = 10)
+
+# > colnames(out$cov)
+# [1] "par_names"   "s1iter"      "Ecov"        "Ecov.MCE"    "Ecov.SE"     "Ecov.low"    "Ecov.up"     "Ecov.n_eff" 
+# [9] "Ecov.Rhat"   "level"       "Mcov"        "Mcov.low"    "Mcov.up"     "pop.cov"     "MCSampID"    "n"          
+# [17] "G"           "condition"   "s1priorType" "RunTime"    
+
+# > colnames(out$cor)
+# [1] "par_names"   "s1iter"      "Ecor"        "Ecor.MCE"    "Ecor.SE"     "Ecor.low"    "Ecor.up"     "Ecor.n_eff" 
+# [9] "Ecor.Rhat"   "level"       "Mcor"        "Mcor.low"    "Mcor.up"     "pop.cor"     "MCSampID"    "n"          
+# [17] "G"           "condition"   "s1priorType" "prior1"      "prior2"      "RunTime" 
+
+# > colnames(out$SD)
+# [1] "par_names"   "s1iter"      "Esd"         "Esd.MCE"     "Esd.SE"      "Esd.low"     "Esd.up"      "Esd.n_eff"  
+# [9] "Esd.Rhat"    "level"       "Msd"         "Msd.low"     "Msd.up"      "pop.SD"      "MCSampID"    "n"          
+# [17] "G"           "condition"   "s1priorType" "prior1"      "prior2"      "RunTime"    
 
 #----
 
