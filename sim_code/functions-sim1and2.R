@@ -16,6 +16,8 @@
 # IDout <- "Actor"; IDin <- "Partner"; IDgroup <- "Group"
 # precision <- 0.1
 # targetCorr <- 0.3
+# priorType = "default"
+# iter = 10
 
 # function 0: generate level-specific (co)variance matrices----
 
@@ -1155,7 +1157,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                                     popCorr_d = getSigma()$R_d),
                   pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
                                    popSD_d = sqrt(diag(getSigma()$SIGMA_d))),
-                  precision = 0.1, multiMLE = FALSE, iter = 2000) {
+                  precision = 0.1, multiMLE = FALSE, iter = 2000, savefile = FALSE) {
   library(lavaan.srm)
   
   s1_env <- new.env()
@@ -1165,11 +1167,11 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   if (priorType == "default") { # default
     rr.data <- get("dat", envir = s1_env)
     
-    default_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType)
+    s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType)
     
     s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                    iter = iter, priors = default_priors, seed = 1512, verbose = F)
+                    iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
     s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1178,7 +1180,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
     if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = default_priors, seed = 1512, verbose = F)
+                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
       s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                         probs = c(0.025, 0.975))$summary))
@@ -1187,12 +1189,12 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   } else if (priorType == "thoughtful" && !missing(targetCorr)) { # thoughtful
     rr.data <- get("dat", envir = s1_env)
     
-    thoughtful_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
+    s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
                           targetCorr = targetCorr, precision = precision)
     
     s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                    iter = iter, priors = thoughtful_priors, seed = 1512, verbose = F)
+                    iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
     s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1201,7 +1203,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
     if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = thoughtful_priors, seed = 1512, verbose = F)
+                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
       s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
@@ -1210,11 +1212,11 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   } else if (priorType == "prophetic") { # prophetic
     rr.data <- get("dat", envir = s1_env)
     
-    prophetic_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
+    s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
                                    precision = precision)
     s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                    iter = iter, priors = prophetic_priors, seed = 1512, verbose = F)
+                    iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
     s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1223,7 +1225,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
     if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = prophetic_priors, seed = 1512, verbose = F)
+                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
       s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
@@ -1232,11 +1234,11 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   } else if (priorType == "ANOVA" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # ANOVA
     rr.data <- get("dat", envir = s1_env)
     
-    ANOVA_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+    s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                                IDgroup = IDgroup, priorType = priorType, precision = precision)
     s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                    iter = iter, priors = ANOVA_priors, seed = 1512, verbose = F)
+                    iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
     s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1245,7 +1247,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
     if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = ANOVA_priors, seed = 1512, verbose = F)
+                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
       s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
@@ -1254,12 +1256,12 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   } else if (priorType == "FIML" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # FIML
     rr.data <- get("dat", envir = s1_env)
     
-    FIML_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+    s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                               IDgroup = IDgroup, priorType = priorType, precision = precision,
                               multi = multiMLE)
     s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                    iter = iter, priors = FIML_priors, seed = 1512, verbose = F)
+                    iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
     s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1268,7 +1270,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
     if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = FIML_priors, seed = 1512, verbose = F)
+                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
       s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
@@ -1276,10 +1278,316 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
     }
   }
   t1 <- Sys.time()
+
+  #begin: saving results----
+  
+  # save variable names
+  pVarNames <- paste0("f", rep(1:3, each = 2), "@", rep(c("A", "P"), times = 3))
+  dVarNames <- paste0("f", rep(1:3, each = 2), "@", rep(c("AP", "PA"), times = 3))
+  
+  # save IDs for rows that need to be extracted
+  p.idx <- outer(1:6, 1:6, FUN = paste, sep = ",")[upper.tri(diag(6), diag = TRUE)]
+  d.idx <- c(paste0(rep(1, each = 6), ",", 1:6), # relvar1; dyadcov11; intra/inter12; intra/inter13
+             paste0(rep(3, each = 4), ",", 3:6), #relvar2; dyadcov22; intra/inter23
+             paste0(rep(5, each = 2), ",", 5:6)) # relvar3; dyadcov33 
+  
+  # case-level covariances
+  pcovElements <- grep(pattern = "pSigma", rownames(s1long))
+  pSigma <- s1long[pcovElements, ] # EAPs
+  pSigma$row <- rep(pVarNames, each = 6)
+  pSigma$col <- rep(pVarNames, times = 6)
+  pSigma$par_names <- paste0(pSigma$row, "~~", pSigma$col)
+  pSigma <- subset(pSigma, select = -c(row, col))
+  pSigmaRows <- paste0("pSigma[", p.idx, "]")
+  pSigma <- pSigma[rownames(pSigma) %in% pSigmaRows, ]
+  colnames(pSigma) <- c("s1iter", "Ecov", "Ecov.MCE", "Ecov.SE", 
+                        "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
+                        "par_names")
+  pSigma$level <- "case"
+  
+  s1pM.covmat  <- summary(s1ests, component = "case", interval = "hdi",
+                          posterior.est = "mode", srm.param = "cov") # MAPs
+  s1pM.covEsts <- as.data.frame(as.table(s1pM.covmat$case$cov$mode))
+  s1pM.covlow  <- as.data.frame(as.table(s1pM.covmat$group$cov$hdi$lower))
+  s1pM.covup   <- as.data.frame(as.table(s1pM.covmat$group$cov$hdi$upper))
+  s1pM.covlist <- list(s1pM.covEsts, s1pM.covlow, s1pM.covup)
+  s1pM.covtab  <- Reduce(function(x, y) merge(x, y, by = c("Var1", "Var2")), s1pM.covlist)
+  colnames(s1pM.covtab) <- c("row", "col", "Mcov", "Mcov.low", "Mcov.up") 
+  
+  s1pM.covtab$row <- as.character(s1pM.covtab$row) # convert into character to replace
+  s1pM.covtab$col <- as.character(s1pM.covtab$col)
+  s1pM.covtab[s1pM.covtab == "V1_out"] <- "f1@A"; s1pM.covtab[s1pM.covtab == "V1_in"]  <- "f1@P"
+  s1pM.covtab[s1pM.covtab == "V2_out"] <- "f2@A"; s1pM.covtab[s1pM.covtab == "V2_in"]  <- "f2@P"
+  s1pM.covtab[s1pM.covtab == "V3_out"] <- "f3@A"; s1pM.covtab[s1pM.covtab == "V3_in"]  <- "f3@P"
+  s1pM.covtab$par_names <- paste0(s1pM.covtab$row, "~~", s1pM.covtab$col)
+  s1pM.covtab <- subset(s1pM.covtab, select = -c(row, col))
+  
+  pSigma <- merge(pSigma, s1pM.covtab, by = "par_names") # merged dataset with EAPs and MAPs
+  
+  # dyad-level covariances
+  dcovElements <- grep(pattern = "dSigma", rownames(s1long))
+  dSigma <- s1long[dcovElements, ] # EAPs
+  dSigma$row <- rep(dVarNames, each = 6)
+  dSigma$col <- rep(dVarNames, times = 6)
+  dSigma$par_names <- paste0(dSigma$row, "~~", dSigma$col)
+  dSigma <- subset(dSigma, select = -c(row, col))
+  dSigmaRows <- paste0("dSigma[", d.idx, "]")
+  dSigma <- dSigma[rownames(dSigma) %in% dSigmaRows, ]
+  colnames(dSigma) <- c("s1iter", "Ecov", "Ecov.MCE", "Ecov.SE", 
+                        "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
+                        "par_names")
+  dSigma$level <- "dyad"
+  
+  s1dM.covmat <- summary(s1ests, component = "dyad", interval = "hdi",
+                         posterior.est = "mode", srm.param = "cov") # MAPs
+  s1dM.covEsts <- as.data.frame(as.table(s1dM.covmat$dyad$cov$mode))
+  s1dM.covlow  <- as.data.frame(as.table(s1dM.covmat$group$cov$hdi$lower))
+  s1dM.covup   <- as.data.frame(as.table(s1dM.covmat$group$cov$hdi$upper))
+  s1dM.covlist <- list(s1dM.covEsts, s1dM.covlow, s1dM.covup)
+  s1dM.covtab  <- Reduce(function(x, y) merge(x, y, by = c("Var1", "Var2")), s1dM.covlist)
+  colnames(s1dM.covtab) <-c("row", "col", "Mcov", "Mcov.low", "Mcov.up") 
+  
+  s1dM.covtab$row <- as.character(s1dM.covtab$row) # convert into character to replace
+  s1dM.covtab$col <- as.character(s1dM.covtab$col)
+  s1dM.covtab[s1dM.covtab == "V1_ij"] <- "f1@AP"; s1dM.covtab[s1dM.covtab == "V1_ji"]  <- "f1@PA"
+  s1dM.covtab[s1dM.covtab == "V2_ij"] <- "f2@AP"; s1dM.covtab[s1dM.covtab == "V2_ji"]  <- "f2@PA"
+  s1dM.covtab[s1dM.covtab == "V3_ij"] <- "f3@AP"; s1dM.covtab[s1dM.covtab == "V3_ji"]  <- "f3@PA"
+  s1dM.covtab$par_names <- paste0(s1dM.covtab$row, "~~", s1dM.covtab$col)
+  s1dM.covtab <- subset(s1dM.covtab, select = -c(row, col))
+  
+  dSigma <- merge(dSigma, s1dM.covtab, by = "par_names") # merged dataset with EAPs and MAPs
+  
+  # case-level correlations
+  pcorElements <- grep(pattern = "Rp", rownames(s1long))
+  pR <- s1long[pcorElements, ] #EAPs
+  pR$row <- rep(pVarNames, each = 6)
+  pR$col <- rep(pVarNames, times = 6)
+  pR$par_names <- paste0(pR$row, "~~", pR$col)
+  pR <- subset(pR, select = -c(row, col))
+  pRRows <- paste0("Rp[", p.idx, "]")
+  pR <- pR[rownames(pR) %in% pRRows, ]
+  colnames(pR) <- c("s1iter", "Ecor", "Ecor.MCE", "Ecor.SE", "Ecor.low", "Ecor.up", 
+                    "Ecor.n_eff", "Ecor.Rhat", "par_names")
+  pR$level <- "case"
+  
+  s1pM.cormat <- summary(s1ests, component = "case", interval = "hdi",
+                         posterior.est = "mode", srm.param = "cor") #MAPs
+  s1pM.corEsts <- as.data.frame(as.table(s1pM.cormat$case$cor$mode))
+  s1pM.corlow  <- as.data.frame(as.table(s1pM.cormat$group$cor$hdi$lower))
+  s1pM.corup   <- as.data.frame(as.table(s1pM.cormat$group$cor$hdi$upper))
+  s1pM.corlist <- list(s1pM.corEsts, s1pM.corlow, s1pM.corup)
+  s1pM.cortab  <- Reduce(function(x, y) merge(x, y, by = c("Var1", "Var2")), s1pM.corlist)
+  colnames(s1pM.cortab) <- c("row", "col", "Mcor", "Mcor.low", "Mcor.up")
+  
+  s1pM.cortab$row <- as.character(s1pM.cortab$row) # convert into character to replace
+  s1pM.cortab$col <- as.character(s1pM.cortab$col)
+  s1pM.cortab[s1pM.cortab == "V1_out"] <- "f1@A"; s1pM.cortab[s1pM.cortab == "V1_in"]  <- "f1@P"
+  s1pM.cortab[s1pM.cortab == "V2_out"] <- "f2@A"; s1pM.cortab[s1pM.cortab == "V2_in"]  <- "f2@P"
+  s1pM.cortab[s1pM.cortab == "V3_out"] <- "f3@A"; s1pM.cortab[s1pM.cortab == "V3_in"]  <- "f3@P"
+  s1pM.cortab$par_names <- paste0(s1pM.cortab$row, "~~", s1pM.cortab$col)
+  s1pM.cortab <- subset(s1pM.cortab, select = -c(row, col))
+  
+  pR <- merge(pR, s1pM.cortab, by = "par_names")
+  
+  # dyad-level correlations
+  dcorElements <- grep(pattern = "Rd2", rownames(s1long))
+  dR <- s1long[dcorElements, ] # EAPs
+  dR$row <- rep(dVarNames, each = 6)
+  dR$col <- rep(dVarNames, times = 6)
+  dR$par_names <- paste0(dR$row, "~~", dR$col)
+  dR <- subset(dR, select = -c(row, col))
+  dRRows <- paste0("Rd2[", d.idx, "]")
+  dR <- dR[rownames(dR) %in% dRRows, ]
+  colnames(dR) <- c("s1iter", "Ecor", "Ecor.MCE", "Ecor.SE", "Ecor.low", "Ecor.up", 
+                    "Ecor.n_eff", "Ecor.Rhat", "par_names")
+  dR$level <- "dyad"
+  
+  s1dM.cormat <- summary(s1ests, component = "dyad", interval = "hdi",
+                         posterior.est = "mode", srm.param = "cor") # MAPs
+  ## dyadic reciprocity == DIAGONAL
+  ## intra == BELOW
+  ## inter == ABOVE
+  s1dM.corEsts <- as.data.frame(as.table(s1dM.cormat$dyad$cor$mode)) 
+  s1dM.corlow  <- as.data.frame(as.table(s1dM.cormat$group$cor$hdi$lower))
+  s1dM.corup   <- as.data.frame(as.table(s1dM.cormat$group$cor$hdi$upper))
+  s1dM.corlist <- list(s1dM.corEsts, s1dM.corlow, s1dM.corup)
+  s1dM.cortab  <- Reduce(function(x, y) merge(x, y, by = c("Var1", "Var2")), s1dM.corlist)
+  
+  # changing names and adding subscripts (to match ogsrm)
+  s1dM.cortab$Var1 <- c("f1@AP", "f1@AP", "f1@AP",
+                        "f1@AP", "f2@AP", "f2@AP", 
+                        "f1@AP", "f2@AP", "f3@AP")
+  s1dM.cortab$Var2 <- c("f1@PA", "f2@PA", "f3@PA", 
+                        "f2@AP", "f2@PA", "f3@PA", 
+                        "f3@AP", "f3@AP", "f3@PA")
+  colnames(s1dM.cortab) <- c("row", "col", "Mcor", "Mcor.low", "Mcor.up")
+  
+  s1dM.cortab$par_names <- paste0(s1dM.cortab$row, "~~", s1dM.cortab$col)
+  s1dM.cortab <- subset(s1dM.cortab, select = -c(row, col))
+  
+  dR <- merge(dR, s1dM.cortab, by = "par_names", all.x = TRUE)
   
   
-  #TODO saving results and then replace the return object
-  return(s1long)
+  # case-level SDs
+  pSDElements <- grep(pattern = "S_p", rownames(s1long))
+  pSD <- s1long[pSDElements, ] # EAPs
+  pSD$row <- pVarNames
+  pSD$col <- pVarNames
+  pSD$par_names <- paste0(pSD$row, "~~", pSD$col)
+  pSD <- subset(pSD, select = -c(row, col))
+  colnames(pSD) <- c("s1iter", "Esd", "Esd.MCE", "Esd.SE", "Esd.low", "Esd.up", 
+                     "Esd.n_eff", "Esd.Rhat", "par_names")
+  pSD$level <- "case"
+  
+  s1pM.SD <- as.data.frame(as.table(summary(s1ests, component = "case", 
+                                            posterior.est = "mode")$case$sd$mode)) #MAPs
+  s1pM.SD$Var1 <- as.character(s1pM.SD$Var1)
+  s1pM.SD[s1pM.SD == "V1_out"] <- "f1@A"; s1pM.SD[s1pM.SD == "V1_in"]  <- "f1@P"
+  s1pM.SD[s1pM.SD == "V2_out"] <- "f2@A"; s1pM.SD[s1pM.SD == "V2_in"]  <- "f2@P"
+  s1pM.SD[s1pM.SD == "V3_out"] <- "f3@A"; s1pM.SD[s1pM.SD == "V3_in"]  <- "f3@P"
+  s1pM.SD$par_names <- paste0(s1pM.SD$Var1, "~~", s1pM.SD$Var1)
+  s1pM.SD <- subset(s1pM.SD, select = c("par_names", "Freq"))
+  names(s1pM.SD)[names(s1pM.SD) == "Freq"] <- "Msd"
+  
+  pSD <- merge(pSD, s1pM.SD, by = "par_names")
+  
+  #dyad-level SDs
+  dSDElements <- grep(pattern = "s_rr", rownames(s1long))
+  dSD <- s1long[dSDElements, ]
+  dSD$row <- dVarNames[c(1, 3, 5)]
+  dSD$col <- dVarNames[c(1, 3, 5)]
+  dSD$par_names <- paste0(dSD$row, "~~", dSD$col)
+  dSD <- subset(dSD, select = -c(row, col))
+  colnames(dSD) <- c("s1iter", "Esd", "Esd.MCE", "Esd.SE", "Esd.low", "Esd.up", 
+                     "Esd.n_eff", "Esd.Rhat", "par_names")
+  dSD$level <- "dyad"
+  
+  s1dM.SD <- as.data.frame(as.table(summary(s1ests, component = "dyad", 
+                                            posterior.est = "mode")$dyad$sd$mode))
+  s1dM.SD$Var1 <- as.character(s1dM.SD$Var1)
+  s1dM.SD[s1dM.SD == "V1"] <- "f1@AP"
+  s1dM.SD[s1dM.SD == "V2"]  <- "f2@AP"
+  s1dM.SD[s1dM.SD == "V3"] <- "f3@AP"
+  s1dM.SD$par_names <- paste0(s1dM.SD$Var1, "~~", s1dM.SD$Var1)
+  s1dM.SD <- subset(s1dM.SD, select = c("par_names", "Freq"))
+  names(s1dM.SD)[names(s1dM.SD) == "Freq"] <- "Msd"
+  
+  dSD <- merge(dSD, s1dM.SD, by = "par_names")
+  
+  #end: saving results----
+  
+  # begin: compiling final results ----
+  
+  # rbind() the person and dyad levels
+  Sigma <- rbind(pSigma, dSigma)
+  R <- rbind(pR, dR)
+  SD <- rbind(pSD, dSD)
+  
+  # remove redundant rows in R (rows with correlations of 1)
+  R <- R[!R$Ecor == 1,]
+  rownames(R) <- NULL
+  
+  # merge all values with their population values
+  popVals <- getSigma(return_mats = FALSE)
+  Sigma <- merge(Sigma, popVals$pop.cov, by = "par_names") # (co)variances
+  R <- merge(R, popVals$pop.cor, by = "par_names") # correlations
+  SD <- merge(SD, popVals$pop.SD, by = "par_names") # standard deviations
+  
+  # add MCSampID, n, and G columns to final dataframes
+  Sigma$MCSampID <- MCSampID; Sigma$n <- n; Sigma$G <- G; Sigma$condition <- paste0(n, "-", G)
+  R$MCSampID <- MCSampID; R$n <- n; R$G <- G; R$condition <- paste0(n, "-", G)
+  SD$MCSampID <- MCSampID; SD$n <- n; SD$G <- G; SD$condition <- paste0(n, "-", G)
+  
+  
+  # add s1priorType columns to the final dataframes
+  Sigma$s1priorType <- paste0(priorType, "-", ifelse(!missing(precision), precision, "SE"))
+  R$s1priorType <- paste0(priorType, "-", ifelse(!missing(precision), precision, "SE"))
+  SD$s1priorType <- paste0(priorType, "-", ifelse(!missing(precision), precision, "SE"))
+  
+  # add prior1 and prior2 columns to R and SD dataframes
+  R$prior1 <- NA; R$prior2 <- NA; SD$prior1 <- NA; SD$prior2 <- NA
+  
+  for(i in 1:length(rr.vars)) {
+    ### outgoing SD prior parameters
+    SD$prior1[SD$par_names == paste0("f", i, "@A~~f", i, "@A")] <- 
+      s1_priors$rr_out_t[paste0("V",i), "m"]
+    SD$prior2[SD$par_names == paste0("f", i, "@A~~f", i, "@A")] <- 
+      s1_priors$rr_out_t[paste0("V",i), "sd"]
+    ### incoming SD prior parameters
+    SD$prior1[SD$par_names == paste0("f", i, "@P~~f", i, "@P")] <- 
+      s1_priors$rr_in_t[paste0("V",i), "m"]
+    SD$prior2[SD$par_names == paste0("f", i, "@P~~f", i, "@P")] <- 
+      s1_priors$rr_in_t[paste0("V",i), "sd"]
+    ## dyad-level SD prior parameters
+    SD$prior1[SD$par_names == paste0("f", i, "@AP~~f", i, "@AP")] <- 
+      s1_priors$rr_rel_t[paste0("V",i), "m"]
+    SD$prior2[SD$par_names == paste0("f", i, "@AP~~f", i, "@AP")] <- 
+      s1_priors$rr_rel_t[paste0("V",i), "sd"]
+    ## generalised cov
+    R$prior1[R$par_names == paste0("f", i, "@A~~f", i, "@P")] <- 
+      s1_priors$case_beta[paste0("V", i, "_in"), paste0("V", i, "_out")]
+    R$prior2[R$par_names == paste0("f", i, "@A~~f", i, "@P")] <- 
+      s1_priors$case_beta[paste0("V", i, "_out"), paste0("V", i, "_in")]
+    
+    ## dyad level correlation prior parameters
+    ### dyadic--diag
+    R$prior1[R$par_names == paste0("f", i, "@AP~~f", i, "@PA")] <- 
+      s1_priors$rr_beta_a[paste0("V", i), paste0("V", i)]
+    R$prior2[R$par_names == paste0("f", i, "@AP~~f", i, "@PA")] <- 
+      s1_priors$rr_beta_b[paste0("V", i), paste0("V", i)]
+    
+    if (i > 1L) for (j in 1:(i-1)) {
+      ### intra--below
+      R$prior1[R$par_names == paste0("f", j, "@AP~~f", i, "@AP")] <- 
+        s1_priors$rr_beta_a[paste0("V", i), paste0("V", j)]
+      R$prior2[R$par_names == paste0("f", j, "@AP~~f", i, "@AP")] <- 
+        s1_priors$rr_beta_b[paste0("V", i), paste0("V", j)]
+      ### inter--above
+      R$prior1[R$par_names == paste0("f", j, "@AP~~f", i, "@PA")] <- 
+        s1_priors$rr_beta_a[paste0("V", j), paste0("V", i)]
+      R$prior2[R$par_names == paste0("f", j, "@AP~~f", i, "@PA")] <- 
+        s1_priors$rr_beta_b[paste0("V", j), paste0("V", i)]
+      
+      ## case-level correlation prior parameters
+      ### AA 
+      R$prior1[R$par_names == paste0("f", j, "@A~~f", i, "@A")] <- 
+        s1_priors$case_beta[paste0("V", i, "_out"), paste0("V", j, "_out")]
+      R$prior2[R$par_names == paste0("f", j, "@A~~f", i, "@A")] <- 
+        s1_priors$case_beta[paste0("V", j, "_out"), paste0("V", i, "_out")]
+      ### AP
+      R$prior1[R$par_names == paste0("f", j, "@A~~f", i, "@P")] <- 
+        s1_priors$case_beta[paste0("V", i, "_in"), paste0("V", j, "_out")]
+      R$prior2[R$par_names == paste0("f", j, "@A~~f", i, "@P")] <- 
+        s1_priors$case_beta[paste0("V", j, "_out"), paste0("V", i, "_in")]
+      ### PA
+      R$prior1[R$par_names == paste0("f", j, "@P~~f", i, "@A")] <- 
+        s1_priors$case_beta[paste0("V", i, "_out"), paste0("V", j, "_in")]
+      R$prior2[R$par_names == paste0("f", j, "@P~~f", i, "@A")] <- 
+        s1_priors$case_beta[paste0("V", j, "_in"), paste0("V", i, "_out")]
+      ### PP
+      R$prior1[R$par_names == paste0("f", j, "@P~~f", i, "@P")] <- 
+        s1_priors$case_beta[paste0("V", i, "_in"), paste0("V", j, "_in")]
+      R$prior2[R$par_names == paste0("f", j, "@P~~f", i, "@P")] <- 
+        s1_priors$case_beta[paste0("V", j, "_in"), paste0("V", i, "_in")]
+    }
+  }
+  
+  # add run time
+  Sigma$RunTime <- difftime(t1, t0, units = "mins")
+  R$RunTime <- difftime(t1, t0, units = "mins")
+  SD$RunTime <- difftime(t1, t0, units = "mins")
+  
+  # combine covariances and correlations + SDs as list
+  out <- list(cov = Sigma, corr = R, SD = SD)
+  
+  # end: compiling final results ----
+  
+  if (savefile) saveRDS(out, 
+                        file = paste0("ID", MCSampID, ".nG", G, ".n", n, "-", 
+                                      priorType, "-", ifelse(!missing(precision), precision, "SE"), ".rds"))
+  
+  return(out)
+
 }
 
 ### README you had the same environment() issue as above within this function, which 
@@ -1290,22 +1598,21 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
 #       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
 #       iter = 10)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-#       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3, 
+#       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3,
 #       precision = 0.1, iter = 10)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-#       IDin = "Partner", IDgroup = "Group", priorType = "prophetic", 
+#       IDin = "Partner", IDgroup = "Group", priorType = "prophetic",
 #       precision = 0.1, iter = 10)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-#       IDin = "Partner", IDgroup = "Group", priorType = "ANOVA", 
+#       IDin = "Partner", IDgroup = "Group", priorType = "ANOVA",
 #       precision = 0.1, iter = 10)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-#       IDin = "Partner", IDgroup = "Group", priorType = "FIML", 
+#       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
 #       precision = 0.1, multiMLE = F, iter = 10)
 
 #----
 
 # function 11: fit saturated model in `srm`----
-
 
 
 #----
