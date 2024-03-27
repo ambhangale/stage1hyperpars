@@ -328,8 +328,6 @@ visBeta <- function(a, b, var1, var2, ...) {
 
 # function 5: thoughtful priors----
 
-#FIXME was i right to remove the `data` argument from the `thoughtful_priors()` function?
-
 thoughtful_priors <- function(targetCorr, precision, default_prior) {
   
   priors <- default_prior
@@ -367,8 +365,6 @@ thoughtful_priors <- function(targetCorr, precision, default_prior) {
 #----
 
 # function 6: prophetic priors----
-
-#FIXME was i right to remove the `data` argument from the `prophetic_priors()` function?
 
 prophetic_priors <- function(pop_corMat, pop_SDvec, precision, default_prior) {
   
@@ -1636,7 +1632,132 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
 
 # function 11: fit saturated model in `srm`----
 
+ogsat <- function(MCSampID, n, G) {
+  
+  library(srm)
+  
+  dat <- genGroups(MCSampID = MCSampID, n = n, G = G)
+  
+  t0 <- Sys.time()
+  
+  # specify satmod 
+  satsyn <- ' %Person
+  f1@A =~ 1*V1@A
+  f2@A =~ 1*V2@A
+  f3@A =~ 1*V3@A
+  
+  f1@P =~ 1*V1@P
+  f2@P =~ 1*V2@P
+  f3@P =~ 1*V3@P
+  
+  V1@A ~~ 0*V1@A + 0*V1@P
+  V1@P ~~ 0*V1@P
+  V2@A ~~ 0*V2@A + 0*V2@P
+  V2@P ~~ 0*V2@P
+  V3@A ~~ 0*V3@A + 0*V3@P
+  V3@P ~~ 0*V3@P
+  
+  f1@A ~~ f1@A + f2@A + f3@A + f1@P + f2@P + f3@P
+  f2@A ~~        f2@A + f3@A + f1@P + f2@P + f3@P
+  f3@A ~~               f3@A + f1@P + f2@P + f3@P
+  f1@P ~~                      f1@P + f2@P + f3@P
+  f2@P ~~                             f2@P + f3@P
+  f3@P ~~                                    f3@P
+  
+  
+  %Dyad
+  f1@AP =~ 1*V1@AP
+  f2@AP =~ 1*V2@AP
+  f3@AP =~ 1*V3@AP
+  
+  # f1@PA =~ 1*V1@PA
+  # f2@PA =~ 1*V2@PA
+  # f3@PA =~ 1*V3@PA
+  
+  V1@AP ~~ 0*V1@AP + 0*V1@PA
+  V1@PA ~~ 0*V1@PA
+  V2@AP ~~ 0*V2@AP + 0*V2@PA
+  V2@PA ~~ 0*V2@PA
+  V3@AP ~~ 0*V3@AP + 0*V3@PA
+  V3@PA ~~ 0*V3@PA
+  
+  f1@AP ~~ relvar1*f1@AP + intra12*f2@AP + intra13*f3@AP + dyad11*f1@PA  + inter12*f2@PA + inter13*f3@PA
+  f2@AP ~~                 relvar2*f2@AP + intra23*f3@AP + inter12*f1@PA +  dyad22*f2@PA + inter23*f3@PA
+  f3@AP ~~                                 relvar3*f3@AP + inter13*f1@PA + inter23*f2@PA +  dyad33*f3@PA
+  f1@PA ~~                                                 relvar1*f1@PA + intra12*f2@PA + intra13*f3@PA
+  f2@PA ~~                                                                 relvar2*f2@PA + intra23*f3@PA
+  f3@PA ~~                                                                                 relvar3*f3@PA
+  '
+  
+  satfit <- srm(satsyn, data = dat, rrgroup_name = "Group",
+                person_names = c("Actor", "Partner"), 
+                fixed.groups = FALSE,
+                verbose = FALSE)
+  
+  t1 <- Sys.time()
+  
+  if (!satfit$res_opt$converged) return(NULL)
+  
+  estVals <- satfit$parm.table
+  
+  # specifying the levels per the notation we want to use
+  estVals$level[estVals$level == "U"] <- "case"
+  estVals$level[estVals$level == "D"] <- "dyad"
+  
+  # indices of parameters we want to extract
+  p.idx <- outer(1:6, 1:6, FUN = paste, sep = ",")[upper.tri(diag(6), diag = TRUE)]
+  d.idx <- c(paste0(rep(1, each = 6), ",", 1:6), # relvar1; dyadcov11; intra/inter12; intra/inter13
+             paste0(rep(3, each = 4), ",", 3:6), #relvar2; dyadcov22; intra/inter23
+             paste0(rep(5, each = 2), ",", 5:6)) # relvar3; dyadcov33 
+  
+  # split the dataframe by level
+  p.estVals <- estVals[estVals$level == "case" & estVals$mat == "PHI_U", ]
+  d.estVals <- estVals[estVals$level == "dyad" & estVals$mat == "PHI_D", ]
+  
+  # create an id variable in each dataframe
+  p.estVals$id <- paste0(p.estVals$row, ',', p.estVals$col)
+  d.estVals$id <- paste0(d.estVals$row, ',', d.estVals$col)
+  
+  # extract elements based on the id variable
+  p.estVals <- p.estVals[p.estVals$id %in% p.idx, ]
+  d.estVals <- d.estVals[d.estVals$id %in% d.idx, ]
+  
+  # replace 3 par_names in p.estVals to make these consistent with lavsat() output
+  p.estVals$par_names[p.estVals$par_names == "f2@A~~f1@P"] <- "f1@P~~f2@A"
+  p.estVals$par_names[p.estVals$par_names == "f3@A~~f1@P"] <- "f1@P~~f3@A"
+  p.estVals$par_names[p.estVals$par_names == "f3@A~~f2@P"] <- "f2@P~~f3@A"
+  
+  # rbind() the datasets back together
+  estVals <- rbind(p.estVals, d.estVals)
+  
+  # subsetting only the relevant columns
+  estVals <- subset(estVals, select = c("par_names", "level","est", "se"))
+  colnames(estVals) <- c("par_names", "level", "ogcov", "ogcov.se")
+  
+  # calculating the upper and lower limits of the confidence interval
+  estVals$ogcov.low <- estVals$ogcov - 1.96*estVals$ogcov.se
+  estVals$ogcov.up <- estVals$ogcov + 1.96*estVals$ogcov.se
+  
+  # creating a final result dataframe
+  popVals <- getSigma(return_mats = FALSE)$pop.cov
+  result <- merge(estVals, popVals, by = "par_names", sort = FALSE)
+  rownames(result) <- NULL
+  
+  result$MCSampID <- MCSampID; result$n <- n; result$G <- G
+  
+  result$MLEiter <- satfit$res_opt$iter # save number of MLE iterations
+  
+  result$RunTime <- difftime(t1, t0, units = "mins")
+  
+  result$condition <- paste0(n, "-", G)
+  
+  return(result)
+}
 
 #----
 
+# > colnames(out$cov)
+# [1] "par_names"   "s1iter"      "Ecov"        "Ecov.MCE"    "Ecov.SE"     "Ecov.low"    "Ecov.up"     "Ecov.n_eff" 
+# [9] "Ecov.Rhat"   "level"       "Mcov"        "Mcov.low"    "Mcov.up"     "pop.cov"     "MCSampID"    "n"          
+# [17] "G"           "condition"   "s1priorType" "RunTime"    
 
