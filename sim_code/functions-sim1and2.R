@@ -1095,17 +1095,15 @@ FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
 
 # function 9: set customised priors for MCMC stage----
 
-# library(lavaan.srm)
-
 set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCorr,
                        pop_corMat = list(popCorr_c = getSigma()$R_c,
                                          popCorr_d = getSigma()$R_d),
                        pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
                                         popSD_d = sqrt(diag(getSigma()$SIGMA_d))),
                        precision, multiMLE = FALSE) {
-  #TODO load lavaan.srm in the parent function of this one (`s1sat()`, i think?)
   prior_env <- new.env()
-  prior_env$default_prior <- srm_priors(rr.data[rr.vars]) # default MCMC priors (diffuse priors)
+  prior_env$default_prior <- srm_priors(data = data[rr.vars]) # default MCMC priors (diffuse priors)
+  #FIXME does the above need to be `rr.data` instead of `data`?
  
  if (priorType == "default") { # default (diffuse) priors
    srmPriors <- get("default_prior", envir = prior_env)
@@ -1140,7 +1138,7 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "ANOVA",
 #            IDout = "Actor", IDin = "Partner", IDgroup = "Group", precision = 0.1)
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "FIML",
-#            IDout = "Actor", IDin = "Partner", IDgroup = "Group", 
+#            IDout = "Actor", IDin = "Partner", IDgroup = "Group",
 #            multiMLE = FALSE, precision = 0.1)
 
 
@@ -1165,7 +1163,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   t0 <- Sys.time() #FIXME check if you also added t1 later
   
   if (priorType == "default") { # default
-    # FIXME rr.data <- get("dat", envir = s1_env)
+    rr.data <- get("dat", envir = s1_env)
     
     default_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType)
     
@@ -1187,7 +1185,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "thoughtful" && !missing(targetCorr)) { # thoughtful
-    # FIXME rr.data <- get("dat", envir = s1_env)
+    rr.data <- get("dat", envir = s1_env)
     
     thoughtful_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
                           targetCorr = targetCorr, precision = precision)
@@ -1210,6 +1208,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "prophetic") { # prophetic
+    rr.data <- get("dat", envir = s1_env)
     
     prophetic_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
                                    precision = precision)
@@ -1231,6 +1230,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "ANOVA" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # ANOVA
+    rr.data <- get("dat", envir = s1_env)
     
     ANOVA_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                                IDgroup = IDgroup, priorType = priorType, precision = precision)
@@ -1252,6 +1252,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "FIML" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # FIML
+    rr.data <- get("dat", envir = s1_env)
     
     FIML_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                               IDgroup = IDgroup, priorType = priorType, precision = precision,
@@ -1281,17 +1282,25 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   return(s1long)
 }
 
-s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-      IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
-      iter = 10)
+### README you had the same environment() issue as above within this function, which 
+### you fixed by creating a new environment to store the data and then get()ing that 
+### data from the new environment each time
 
-s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-      IDin = "Partner", IDgroup = "Group", priorType = "default", targetCorr = 0.3, 
-      precision = 0.1, iter = 10)
-
-
-#FIXME fix the whole environment issue once you're done coding up everything that needs to be done
-
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
+#       iter = 10)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3, 
+#       precision = 0.1, iter = 10)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "prophetic", 
+#       precision = 0.1, iter = 10)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "ANOVA", 
+#       precision = 0.1, iter = 10)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "FIML", 
+#       precision = 0.1, multiMLE = F, iter = 10)
 
 #----
 
