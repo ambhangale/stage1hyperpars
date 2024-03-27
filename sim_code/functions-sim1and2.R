@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 25 March 2024
+## Last updated: 27 March 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1093,7 +1093,7 @@ FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
 
 #----
 
-# function xxxx: set customised priors for MCMC stage----
+# function 9: set customised priors for MCMC stage----
 
 # library(lavaan.srm)
 
@@ -1133,8 +1133,8 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 }
 
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "default")
-# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"),
-#            priorType = "prophetic", precision = 0.1)
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"),priorType = "prophetic", 
+#            precision = 0.1)
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "thoughtful",
 #            targetCorr = 0.3, precision = 0.1)
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "ANOVA",
@@ -1149,3 +1149,156 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 # README http://adv-r.had.co.nz/Environments.html#env-answers 
 
 #----
+
+# function 10: stage 1 in `lavaan.srm`----
+
+s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
+                  targetCorr, pop_corMat = list(popCorr_c = getSigma()$R_c,
+                                    popCorr_d = getSigma()$R_d),
+                  pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
+                                   popSD_d = sqrt(diag(getSigma()$SIGMA_d))),
+                  precision = 0.1, multiMLE = FALSE, iter = 2000) {
+  library(lavaan.srm)
+  
+  s1_env <- new.env()
+  s1_env$dat <- genGroups(MCSampID = MCSampID, n = n, G = G)
+  t0 <- Sys.time() #FIXME check if you also added t1 later
+  
+  if (priorType == "default") { # default
+    # FIXME rr.data <- get("dat", envir = s1_env)
+    
+    default_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType)
+    
+    s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                    IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                    iter = iter, priors = default_priors, seed = 1512, verbose = F)
+    
+    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
+    s1long <- s1long[-nrow(s1long), ]
+    
+    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+      s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                      IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                      iter = iter*2, priors = default_priors, seed = 1512, verbose = F)
+      
+      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                        probs = c(0.025, 0.975))$summary))
+      s1long <- s1long[-nrow(s1long), ]
+    }
+  } else if (priorType == "thoughtful" && !missing(targetCorr)) { # thoughtful
+    # FIXME rr.data <- get("dat", envir = s1_env)
+    
+    thoughtful_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
+                          targetCorr = targetCorr, precision = precision)
+    
+    s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                    IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                    iter = iter, priors = thoughtful_priors, seed = 1512, verbose = F)
+    
+    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
+    s1long <- s1long[-nrow(s1long), ]
+    
+    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+      s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                      IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                      iter = iter*2, priors = thoughtful_priors, seed = 1512, verbose = F)
+      
+      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                          probs = c(0.025, 0.975))$summary))
+      s1long <- s1long[-nrow(s1long), ]
+    }
+  } else if (priorType == "prophetic") { # prophetic
+    
+    prophetic_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
+                                   precision = precision)
+    s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                    IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                    iter = iter, priors = prophetic_priors, seed = 1512, verbose = F)
+    
+    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
+    s1long <- s1long[-nrow(s1long), ]
+    
+    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+      s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                      IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                      iter = iter*2, priors = prophetic_priors, seed = 1512, verbose = F)
+      
+      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                          probs = c(0.025, 0.975))$summary))
+      s1long <- s1long[-nrow(s1long), ]
+    }
+  } else if (priorType == "ANOVA" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # ANOVA
+    
+    ANOVA_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                               IDgroup = IDgroup, priorType = priorType, precision = precision)
+    s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                    IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                    iter = iter, priors = ANOVA_priors, seed = 1512, verbose = F)
+    
+    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
+    s1long <- s1long[-nrow(s1long), ]
+    
+    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+      s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                      IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                      iter = iter*2, priors = ANOVA_priors, seed = 1512, verbose = F)
+      
+      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                          probs = c(0.025, 0.975))$summary))
+      s1long <- s1long[-nrow(s1long), ]
+    }
+  } else if (priorType == "FIML" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # FIML
+    
+    FIML_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                              IDgroup = IDgroup, priorType = priorType, precision = precision,
+                              multi = multiMLE)
+    s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                    IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                    iter = iter, priors = FIML_priors, seed = 1512, verbose = F)
+    
+    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
+    s1long <- s1long[-nrow(s1long), ]
+    
+    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+      s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                      IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                      iter = iter*2, priors = FIML_priors, seed = 1512, verbose = F)
+      
+      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                          probs = c(0.025, 0.975))$summary))
+      s1long <- s1long[-nrow(s1long), ]
+    }
+  }
+  t1 <- Sys.time()
+  
+  
+  #TODO saving results and then replace the return object
+  return(s1long)
+}
+
+s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+      IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
+      iter = 10)
+
+s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+      IDin = "Partner", IDgroup = "Group", priorType = "default", targetCorr = 0.3, 
+      precision = 0.1, iter = 10)
+
+
+#FIXME fix the whole environment issue once you're done coding up everything that needs to be done
+
+
+#----
+
+# function 11: fit saturated model in `srm`----
+
+
+
+#----
+
+
