@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 27 March 2024
+## Last updated: 2 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1635,6 +1635,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
 ogsat <- function(MCSampID, n, G) {
   
   library(srm)
+  library(car)
   
   dat <- genGroups(MCSampID = MCSampID, n = n, G = G)
   
@@ -1698,11 +1699,12 @@ ogsat <- function(MCSampID, n, G) {
   
   if (!satfit$res_opt$converged) return(NULL)
   
-  estVals <- satfit$parm.table
+  ## cov results
+  covVals <- satfit$parm.table
   
   # specifying the levels per the notation we want to use
-  estVals$level[estVals$level == "U"] <- "case"
-  estVals$level[estVals$level == "D"] <- "dyad"
+  covVals$level[covVals$level == "U"] <- "case"
+  covVals$level[covVals$level == "D"] <- "dyad"
   
   # indices of parameters we want to extract
   p.idx <- outer(1:6, 1:6, FUN = paste, sep = ",")[upper.tri(diag(6), diag = TRUE)]
@@ -1711,47 +1713,139 @@ ogsat <- function(MCSampID, n, G) {
              paste0(rep(5, each = 2), ",", 5:6)) # relvar3; dyadcov33 
   
   # split the dataframe by level
-  p.estVals <- estVals[estVals$level == "case" & estVals$mat == "PHI_U", ]
-  d.estVals <- estVals[estVals$level == "dyad" & estVals$mat == "PHI_D", ]
+  p.covVals <- covVals[covVals$level == "case" & covVals$mat == "PHI_U", ]
+  d.covVals <- covVals[covVals$level == "dyad" & covVals$mat == "PHI_D", ]
   
   # create an id variable in each dataframe
-  p.estVals$id <- paste0(p.estVals$row, ',', p.estVals$col)
-  d.estVals$id <- paste0(d.estVals$row, ',', d.estVals$col)
+  p.covVals$id <- paste0(p.covVals$row, ',', p.covVals$col)
+  d.covVals$id <- paste0(d.covVals$row, ',', d.covVals$col)
   
   # extract elements based on the id variable
-  p.estVals <- p.estVals[p.estVals$id %in% p.idx, ]
-  d.estVals <- d.estVals[d.estVals$id %in% d.idx, ]
+  p.covVals <- p.covVals[p.covVals$id %in% p.idx, ]
+  d.covVals <- d.covVals[d.covVals$id %in% d.idx, ]
   
-  # replace 3 par_names in p.estVals to make these consistent with lavsat() output
-  p.estVals$par_names[p.estVals$par_names == "f2@A~~f1@P"] <- "f1@P~~f2@A"
-  p.estVals$par_names[p.estVals$par_names == "f3@A~~f1@P"] <- "f1@P~~f3@A"
-  p.estVals$par_names[p.estVals$par_names == "f3@A~~f2@P"] <- "f2@P~~f3@A"
+  # replace 3 par_names in p.covVals to make these consistent with lavsat() output
+  p.covVals$par_names[p.covVals$par_names == "f2@A~~f1@P"] <- "f1@P~~f2@A"
+  p.covVals$par_names[p.covVals$par_names == "f3@A~~f1@P"] <- "f1@P~~f3@A"
+  p.covVals$par_names[p.covVals$par_names == "f3@A~~f2@P"] <- "f2@P~~f3@A"
   
   # rbind() the datasets back together
-  estVals <- rbind(p.estVals, d.estVals)
+  covVals <- rbind(p.covVals, d.covVals)
   
   # subsetting only the relevant columns
-  estVals <- subset(estVals, select = c("par_names", "level","est", "se"))
-  colnames(estVals) <- c("par_names", "level", "ogcov", "ogcov.se")
+  covVals <- subset(covVals, select = c("par_names", "level", "est", "se"))
+  colnames(covVals) <- c("par_names", "level", "ogcov", "ogcov.se")
   
   # calculating the upper and lower limits of the confidence interval
-  estVals$ogcov.low <- estVals$ogcov - 1.96*estVals$ogcov.se
-  estVals$ogcov.up <- estVals$ogcov + 1.96*estVals$ogcov.se
+  covVals$ogcov.low <- covVals$ogcov - 1.96*covVals$ogcov.se
+  covVals$ogcov.up <- covVals$ogcov + 1.96*covVals$ogcov.se
   
-  # creating a final result dataframe
-  popVals <- getSigma(return_mats = FALSE)$pop.cov
-  result <- merge(estVals, popVals, by = "par_names", sort = FALSE)
-  rownames(result) <- NULL
+  # creating a final cov dataframe
+  popVals_cov <- getSigma(return_mats = FALSE)$pop.cov
+  covResult <- merge(covVals, popVals_cov, by = "par_names", sort = FALSE)
+  rownames(covResult) <- NULL
   
-  result$MCSampID <- MCSampID; result$n <- n; result$G <- G
+  ## add columns pertaining to the simulation
+  covResult$MCSampID <- MCSampID; covResult$n <- n; covResult$G <- G
+  covResult$MLEiter <- satfit$res_opt$iter # save number of MLE iterations
+  covResult$RunTime <- difftime(t1, t0, units = "mins")
+  covResult$condition <- paste0(n, "-", G)
   
-  result$MLEiter <- satfit$res_opt$iter # save number of MLE iterations
+  ## cor results
+  p.names <- paste0("f", rep(1:3, times = 2), "@", rep(c("A", "P"), each = 3))
+  # d.names <- paste0("f", rep(1:3, times = 2), "@", rep(c("AP", "PA"), each = 3))
+  var.names <- c("f1", "f2", "f3")
   
-  result$RunTime <- difftime(t1, t0, units = "mins")
+  ## correlation and SD results
+  p.SD <- NULL; d.SD <- NULL; p.cor <- NULL; d.cor <- NULL
   
-  result$condition <- paste0(n, "-", G)
+  for (rr in 1:length(p.names)) { # case level
+    p.SDval <- deltaMethod(satfit, g. = paste0("sqrt(`", p.names[rr], "~~", p.names[rr], "`)"))
+    p.SDval$par_names <- paste0(p.names[rr], "~~", p.names[rr])
+    rownames(p.SDval) <- NULL
+    if(is.null(p.SD)) {
+      p.SD <- p.SDval
+    } else {
+      p.SD <- rbind(p.SD, p.SDval)
+    }
+    if (rr > 1L) for (kk in 1:(rr-1)) {
+      p.corVal <- deltaMethod(satfit, g. = paste0("`", p.names[kk], "~~", p.names[rr],"`/(sqrt(`",
+                                                  p.names[rr], "~~", p.names[rr], "`*`", 
+                                                  p.names[kk], "~~", p.names[kk], "`))"))
+      p.corVal$par_names <- paste0(p.names[kk], "~~", p.names[rr])
+      rownames(p.corVal) <- NULL
+      if(is.null(p.cor)) {
+        p.cor <- p.corVal
+      } else {
+        p.cor <- rbind(p.cor, p.corVal)
+      }
+    } 
+  }
+  p.SD <- as.data.frame(p.SD)
+  p.cor <- as.data.frame(p.cor)
   
-  return(result)
+  # replace 3 par_names in p.cor to make these consistent with lavsat() output
+  p.cor$par_names[p.cor$par_names == "f2@A~~f1@P"] <- "f1@P~~f2@A"
+  p.cor$par_names[p.cor$par_names == "f3@A~~f1@P"] <- "f1@P~~f3@A"
+  p.cor$par_names[p.cor$par_names == "f3@A~~f2@P"] <- "f2@P~~f3@A"
+  
+  for (ll in 1:length(var.names)) {
+    ## SDs
+    d.SDval <- deltaMethod(satfit, g. = paste0("sqrt(`", var.names[ll], 
+                                               "@AP~~", var.names[ll], "@AP`)"))
+    d.SDval$par_names <- paste0(var.names[ll], "@AP~~", 
+                                var.names[ll], "@AP")
+    rownames(d.SDval) <- NULL
+    if(is.null(d.SD)) {
+      d.SD <- d.SDval
+    } else {
+      d.SD <- rbind(d.SD, d.SDval)
+    }
+    ## dyadic cor
+    d.dyadicval <- deltaMethod(satfit, g. = paste0("`", var.names[ll], "@AP~~", 
+                                                   var.names[ll],"@PA`/`", var.names[ll], 
+                                                   "@AP~~", var.names[ll],"@AP`"))
+    d.dyadicval$par_names <- paste0(var.names[ll], "@AP~~", var.names[ll], "@PA")
+    rownames(d.dyadicval) <- NULL
+    if(is.null(d.cor)) {
+      d.cor <- d.dyadicval
+    } else {
+      d.cor <- rbind(d.cor, d.dyadicval)
+    }
+    if (ll > 1L) for (mm in 1:(ll-1)) {
+      ## intra cor
+      d.intraval <- deltaMethod(satfit, g. = paste0("`", var.names[mm], "@AP~~", 
+                                                    var.names[ll],"@AP`/(sqrt(`", var.names[ll], 
+                                                    "@AP~~", var.names[ll], "@AP`*`",
+                                                    var.names[mm], "@AP~~", var.names[mm], "@AP`))"))
+      d.intraval$par_names <- paste0(var.names[mm], "@AP~~", var.names[ll], "@AP")
+      rownames(d.intraval) <- NULL
+      if(is.null(d.cor)) {
+        d.cor <- d.intraval
+      } else {
+        d.cor <- rbind(d.cor, d.intraval)
+      }
+      ## inter cor
+      d.interval <- deltaMethod(satfit, g. = paste0("`", var.names[mm], "@AP~~", 
+                                                    var.names[ll],"@PA`/(sqrt(`", var.names[ll], 
+                                                    "@AP~~", var.names[ll], "@AP`*`",
+                                                    var.names[mm], "@AP~~", var.names[mm], "@AP`))"))
+      d.interval$par_names <- paste0(var.names[mm], "@AP~~", var.names[ll], "@PA")
+      rownames(d.interval) <- NULL
+      if(is.null(d.cor)) {
+        d.cor <- d.interval
+      } else {
+        d.cor <- rbind(d.cor, d.interval)
+      }
+    }
+  }
+  d.SD <- as.data.frame(d.SD)
+  d.cor <- as.data.frame(d.cor)
+  
+  SD <- rbind(p.SD, d.SD)
+  cor <- rbind(p.cor, d.cor)
+  
+  return(...) #TODO
 }
 
 #----
