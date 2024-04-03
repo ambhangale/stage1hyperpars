@@ -180,14 +180,14 @@ genData <- function(n) {
   dimnames(SIGMA_d) <- list(Inames_d, Inames_d)
   
   ##MEAN VECTOR-----
-  mu <- c(rep(0, 6)) # group-mean centered SRM component variables
+  mu <- rep(0, 6) # group-mean centered SRM component variables
   
   ##DATA GENERATION-----
   
-  library(rockchalk) # for mvrnorm()
+  library(mnormt) # for rmnorm()
   
-  dat_c <- mvrnorm(n = n, mu = mu, Sigma = SIGMA_c)
-  dat_d <- mvrnorm(n = (n*(n - 1))/2, mu = mu, Sigma = SIGMA_d) 
+  dat_c <- rmnorm(n = n, mean = mu, varcov = SIGMA_c)
+  dat_d <- rmnorm(n = (n*(n - 1))/2, mean = mu, varcov = SIGMA_d) 
   # Ndyads = n * (n - 1) -- and we already have separate AP and PA columns, 
   # so we need only (n*(n - 1))/2 rows in total
   
