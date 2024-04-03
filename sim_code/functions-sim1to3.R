@@ -1629,7 +1629,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
 #       precision = 0.1, iter = 10)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
-#       precision = 0.1, multiMLE = F, iter = 10) -> lavRes
+#       precision = 0.1, multiMLE = F, iter = 10)
 
 #----
 
@@ -1909,17 +1909,5 @@ ogsat <- function(MCSampID, n, G, savefile = FALSE) {
 }
 
 # ogsat(1, 6, 10)
-
-# > colnames(ogResult$cov)
-# [1] "par_names" "level"     "ogcov"     "ogcov.SE"  "ogcov.low" "ogcov.up"  "pop.cov"   "MCSampID" 
-# [9] "n"         "G"         "iter"      "RunTime"   "condition" "analType" 
-
-# > colnames(ogResult$cor)
-# [1] "par_names" "level"     "ogcor"     "ogcor.SE"  "ogcor.low" "ogcor.up"  "MCSampID"  "n"        
-# [9] "G"         "condition" "iter"      "RunTime"   "pop.cor"   "analType" 
-
-# > colnames(ogResult$SD)
-# [1] "par_names" "level"     "ogsd"      "ogsd.SE"   "ogsd.low"  "ogsd.up"   "MCSampID"  "n"        
-# [9] "G"         "condition" "iter"      "RunTime"   "pop.SD"    "analType" 
 
 #----
