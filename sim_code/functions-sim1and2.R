@@ -1169,7 +1169,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
-    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
@@ -1178,7 +1178,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                         probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1192,7 +1192,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
-    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
@@ -1201,7 +1201,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1214,7 +1214,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
-    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
@@ -1223,7 +1223,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1236,7 +1236,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
-    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
@@ -1245,7 +1245,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1259,7 +1259,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
-    s1long <- cbind(s1iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
@@ -1268,7 +1268,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(s1iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                           probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1296,7 +1296,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   pSigma <- subset(pSigma, select = -c(row, col))
   pSigmaRows <- paste0("pSigma[", p.idx, "]")
   pSigma <- pSigma[rownames(pSigma) %in% pSigmaRows, ]
-  colnames(pSigma) <- c("s1iter", "Ecov", "Ecov.MCE", "Ecov.SE", 
+  colnames(pSigma) <- c("iter", "Ecov", "Ecov.MCE", "Ecov.SE", 
                         "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
                         "par_names")
   pSigma$level <- "case"
@@ -1329,7 +1329,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   dSigma <- subset(dSigma, select = -c(row, col))
   dSigmaRows <- paste0("dSigma[", d.idx, "]")
   dSigma <- dSigma[rownames(dSigma) %in% dSigmaRows, ]
-  colnames(dSigma) <- c("s1iter", "Ecov", "Ecov.MCE", "Ecov.SE", 
+  colnames(dSigma) <- c("iter", "Ecov", "Ecov.MCE", "Ecov.SE", 
                         "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
                         "par_names")
   dSigma$level <- "dyad"
@@ -1362,7 +1362,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   pR <- subset(pR, select = -c(row, col))
   pRRows <- paste0("Rp[", p.idx, "]")
   pR <- pR[rownames(pR) %in% pRRows, ]
-  colnames(pR) <- c("s1iter", "Ecor", "Ecor.MCE", "Ecor.SE", "Ecor.low", "Ecor.up", 
+  colnames(pR) <- c("iter", "Ecor", "Ecor.MCE", "Ecor.SE", "Ecor.low", "Ecor.up", 
                     "Ecor.n_eff", "Ecor.Rhat", "par_names")
   pR$level <- "case"
   
@@ -1394,7 +1394,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   dR <- subset(dR, select = -c(row, col))
   dRRows <- paste0("Rd2[", d.idx, "]")
   dR <- dR[rownames(dR) %in% dRRows, ]
-  colnames(dR) <- c("s1iter", "Ecor", "Ecor.MCE", "Ecor.SE", "Ecor.low", "Ecor.up", 
+  colnames(dR) <- c("iter", "Ecor", "Ecor.MCE", "Ecor.SE", "Ecor.low", "Ecor.up", 
                     "Ecor.n_eff", "Ecor.Rhat", "par_names")
   dR$level <- "dyad"
   
@@ -1430,7 +1430,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   pSD$col <- pVarNames
   pSD$par_names <- paste0(pSD$row, "~~", pSD$col)
   pSD <- subset(pSD, select = -c(row, col))
-  colnames(pSD) <- c("s1iter", "Esd", "Esd.MCE", "Esd.SE", "Esd.low", "Esd.up", 
+  colnames(pSD) <- c("iter", "Esd", "Esd.MCE", "Esd.SE", "Esd.low", "Esd.up", 
                      "Esd.n_eff", "Esd.Rhat", "par_names")
   pSD$level <- "case"
   
@@ -1457,7 +1457,7 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   dSD$col <- dVarNames[c(1, 3, 5)]
   dSD$par_names <- paste0(dSD$row, "~~", dSD$col)
   dSD <- subset(dSD, select = -c(row, col))
-  colnames(dSD) <- c("s1iter", "Esd", "Esd.MCE", "Esd.SE", "Esd.low", "Esd.up", 
+  colnames(dSD) <- c("iter", "Esd", "Esd.MCE", "Esd.SE", "Esd.low", "Esd.up", 
                      "Esd.n_eff", "Esd.Rhat", "par_names")
   dSD$level <- "dyad"
   
@@ -1502,10 +1502,10 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   SD$MCSampID <- MCSampID; SD$n <- n; SD$G <- G; SD$condition <- paste0(n, "-", G)
   
   
-  # add s1priorType columns to the final dataframes
-  Sigma$s1priorType <- paste0(priorType, "-", ifelse(!missing(precision), precision, "SE"))
-  R$s1priorType <- paste0(priorType, "-", ifelse(!missing(precision), precision, "SE"))
-  SD$s1priorType <- paste0(priorType, "-", ifelse(!missing(precision), precision, "SE"))
+  # add analType columns to the final dataframes
+  Sigma$analType <- paste0("MCMC-", priorType, "-", ifelse(!missing(precision), precision, "SE"))
+  R$analType <- paste0("MCMC-", priorType, "-", ifelse(!missing(precision), precision, "SE"))
+  SD$analType <- paste0("MCMC-", priorType, "-", ifelse(!missing(precision), precision, "SE"))
   
   # add prior1 and prior2 columns to R and SD dataframes
   R$prior1 <- NA; R$prior2 <- NA; SD$prior1 <- NA; SD$prior2 <- NA
@@ -1580,6 +1580,24 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
   R$RunTime <- difftime(t1, t0, units = "mins")
   SD$RunTime <- difftime(t1, t0, units = "mins")
   
+  # reorder columns and add redundant columns (those in og) to make postprocessing easier
+  Sigma <- Sigma[, c("par_names", "MCSampID", "n", "G", "condition", "level",
+                     "analType", "iter", "RunTime", "pop.cov", "Ecov", "Ecov.MCE",
+                     "Ecov.SE", "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
+                     "Mcov", "Mcov.low", "Mcov.up")]
+  R <- R[, c("par_names", "MCSampID", "n", "G", "condition", "level",
+                     "analType", "iter", "RunTime", "pop.cor", "Ecor", "Ecor.MCE",
+                     "Ecor.SE", "Ecor.low", "Ecor.up", "Ecor.n_eff", "Ecor.Rhat", 
+                     "Mcor", "Mcor.low", "Mcor.up", "prior1", "prior2")]
+  SD <- SD[, c("par_names", "MCSampID", "n", "G", "condition", "level",
+             "analType", "iter", "RunTime", "pop.SD", "Esd", "Esd.MCE",
+             "Esd.SE", "Esd.low", "Esd.up", "Esd.n_eff", "Esd.Rhat", 
+             "Msd", "Msd.low", "Msd.up", "prior1", "prior2")]
+  
+  Sigma$ogcov <- NA; Sigma$ogcov.SE <- NA; Sigma$ogcov.low <- NA; Sigma$ogcov.up <- NA
+  R$ogcor <- NA; R$ogcor.SE <- NA; R$ogcor.low <- NA; R$ogcor.up <- NA
+  SD$ogsd <- NA; SD$ogsd.SE <- NA; SD$ogsd.low <- NA; SD$ogsd.up <- NA
+  
   # combine covariances and correlations + SDs as list
   out <- list(cov = Sigma, cor = R, SD = SD)
   
@@ -1611,28 +1629,13 @@ s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
 #       precision = 0.1, iter = 10)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
-#       precision = 0.1, multiMLE = F, iter = 10)
-
-# > colnames(out$cov)
-# [1] "par_names"   "s1iter"      "Ecov"        "Ecov.MCE"    "Ecov.SE"     "Ecov.low"    "Ecov.up"     "Ecov.n_eff" 
-# [9] "Ecov.Rhat"   "level"       "Mcov"        "Mcov.low"    "Mcov.up"     "pop.cov"     "MCSampID"    "n"          
-# [17] "G"           "condition"   "s1priorType" "RunTime"    
-
-# > colnames(out$cor)
-# [1] "par_names"   "s1iter"      "Ecor"        "Ecor.MCE"    "Ecor.SE"     "Ecor.low"    "Ecor.up"     "Ecor.n_eff" 
-# [9] "Ecor.Rhat"   "level"       "Mcor"        "Mcor.low"    "Mcor.up"     "pop.cor"     "MCSampID"    "n"          
-# [17] "G"           "condition"   "s1priorType" "prior1"      "prior2"      "RunTime" 
-
-# > colnames(out$SD)
-# [1] "par_names"   "s1iter"      "Esd"         "Esd.MCE"     "Esd.SE"      "Esd.low"     "Esd.up"      "Esd.n_eff"  
-# [9] "Esd.Rhat"    "level"       "Msd"         "Msd.low"     "Msd.up"      "pop.SD"      "MCSampID"    "n"          
-# [17] "G"           "condition"   "s1priorType" "prior1"      "prior2"      "RunTime"    
+#       precision = 0.1, multiMLE = F, iter = 10) -> lavRes
 
 #----
 
 # function 11: fit saturated model in `srm`----
 
-ogsat <- function(MCSampID, n, G) {
+ogsat <- function(MCSampID, n, G, savefile = FALSE) {
   
   library(srm)
   library(car)
@@ -1734,11 +1737,11 @@ ogsat <- function(MCSampID, n, G) {
   
   # subsetting only the relevant columns
   covVals <- subset(covVals, select = c("par_names", "level", "est", "se"))
-  colnames(covVals) <- c("par_names", "level", "ogcov", "ogcov.se")
+  colnames(covVals) <- c("par_names", "level", "ogcov", "ogcov.SE")
   
   # calculating the upper and lower limits of the confidence interval
-  covVals$ogcov.low <- covVals$ogcov - 1.96*covVals$ogcov.se
-  covVals$ogcov.up <- covVals$ogcov + 1.96*covVals$ogcov.se
+  covVals$ogcov.low <- covVals$ogcov - 1.96*covVals$ogcov.SE
+  covVals$ogcov.up <- covVals$ogcov + 1.96*covVals$ogcov.SE
   
   # creating a final cov dataframe
   popVals_cov <- getSigma(return_mats = FALSE)$pop.cov
@@ -1747,9 +1750,10 @@ ogsat <- function(MCSampID, n, G) {
   
   ## add columns pertaining to the simulation
   covResult$MCSampID <- MCSampID; covResult$n <- n; covResult$G <- G
-  covResult$MLEiter <- satfit$res_opt$iter # save number of MLE iterations
+  covResult$iter <- satfit$res_opt$iter # save number of MLE iterations
   covResult$RunTime <- difftime(t1, t0, units = "mins")
   covResult$condition <- paste0(n, "-", G)
+  covResult$analType <- "1S-FIML"
   
   ## cor results
   p.names <- paste0("f", rep(1:3, times = 2), "@", rep(c("A", "P"), each = 3))
@@ -1783,6 +1787,7 @@ ogsat <- function(MCSampID, n, G) {
   }
   p.SD <- as.data.frame(p.SD)
   p.cor <- as.data.frame(p.cor)
+  p.SD$level <- "case"; p.cor$level <- "case"
   
   # replace 3 par_names in p.cor to make these consistent with lavsat() output
   p.cor$par_names[p.cor$par_names == "f2@A~~f1@P"] <- "f1@P~~f2@A"
@@ -1841,17 +1846,80 @@ ogsat <- function(MCSampID, n, G) {
   }
   d.SD <- as.data.frame(d.SD)
   d.cor <- as.data.frame(d.cor)
+  d.SD$level <- "dyad"; d.cor$level <- "dyad"
   
-  SD <- rbind(p.SD, d.SD)
-  cor <- rbind(p.cor, d.cor)
+  SDResult <- rbind(p.SD, d.SD)
+  SDResult <- SDResult[, c("par_names", "level", "Estimate", "SE", "2.5 %", "97.5 %")]
+  names(SDResult) <- c("par_names", "level", "ogsd", "ogsd.SE", "ogsd.low", "ogsd.up")
+  SDResult$MCSampID <- MCSampID; SDResult$n <- n; SDResult$G <- G; SDResult$condition <- paste0(n, "-", G)
+  SDResult$iter <- satfit$res_opt$iter
+  SDResult$RunTime <- difftime(t1, t0, units = "mins")
+  popVals_SD <- getSigma(return_mats = FALSE)$pop.SD
+  SDResult <- merge(SDResult, popVals_SD, by = "par_names", sort = FALSE)
+  SDResult$analType <- "1S-FIML"
   
-  return(...) #TODO
+  corResult <- rbind(p.cor, d.cor)
+  corResult <- corResult[, c("par_names", "level", "Estimate", "SE", "2.5 %", "97.5 %")]
+  names(corResult) <- c("par_names", "level", "ogcor", "ogcor.SE", "ogcor.low", "ogcor.up")
+  corResult$MCSampID <- MCSampID; corResult$n <- n; corResult$G <- G; corResult$condition <- paste0(n, "-", G)
+  corResult$iter <- satfit$res_opt$iter
+  corResult$RunTime <- difftime(t1, t0, units = "mins")
+  popVals_cor <- getSigma(return_mats = FALSE)$pop.cor
+  corResult <- merge(corResult, popVals_cor, by = "par_names", sort = FALSE)
+  corResult$analType <- "1S-FIML"
+  
+  # add redundant columns (those in s1sat) and reorder columns to make postporcessing easier
+  covResult$Ecov <- NA; covResult$Ecov.MCE <- NA; covResult$Ecov.SE <- NA
+  covResult$Ecov.low <- NA; covResult$Ecov.up <- NA; covResult$Ecov.n_eff <- NA
+  covResult$Ecov.Rhat <- NA; covResult$Mcov <- NA; covResult$Mcov.low <- NA;
+  covResult$Mcov.up <- NA
+  corResult$Ecor <- NA; corResult$Ecor.MCE <- NA; corResult$Ecor.SE <- NA
+  corResult$Ecor.low <- NA; corResult$Ecor.up <- NA; corResult$Ecor.n_eff <- NA
+  corResult$Ecor.Rhat <- NA; corResult$Mcor <- NA; corResult$Mcor.low <- NA;
+  corResult$Mcor.up <- NA; corResult$prior1 <- NA; corResult$prior2 <- NA
+  SDResult$Esd <- NA; SDResult$Esd.MCE <- NA; SDResult$Esd.SE <- NA
+  SDResult$Esd.low <- NA; SDResult$Esd.up <- NA; SDResult$Esd.n_eff <- NA
+  SDResult$Esd.Rhat <- NA; SDResult$Msd <- NA; SDResult$Msd.low <- NA;
+  SDResult$Msd.up <- NA; SDResult$prior1 <- NA; SDResult$prior2 <- NA
+  
+  covResult <- covResult[, c("par_names", "MCSampID", "n", "G", "condition", "level",
+                             "analType", "iter", "RunTime", "pop.cov", "Ecov", "Ecov.MCE",
+                             "Ecov.SE", "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
+                             "Mcov", "Mcov.low", "Mcov.up", "ogcov", "ogcov.SE",
+                             "ogcov.low", "ogcov.up")]
+  corResult <- corResult[, c("par_names", "MCSampID", "n", "G", "condition", "level",
+                             "analType", "iter", "RunTime", "pop.cor", "Ecor", "Ecor.MCE",
+                             "Ecor.SE", "Ecor.low", "Ecor.up", "Ecor.n_eff", "Ecor.Rhat", 
+                             "Mcor", "Mcor.low", "Mcor.up", "prior1", "prior2",
+                             "ogcor", "ogcor.SE", "ogcor.low", "ogcor.up")]
+  SDResult <- SDResult[, c("par_names", "MCSampID", "n", "G", "condition", "level",
+                           "analType", "iter", "RunTime", "pop.SD", "Esd", "Esd.MCE",
+                           "Esd.SE", "Esd.low", "Esd.up", "Esd.n_eff", "Esd.Rhat", 
+                           "Msd", "Msd.low", "Msd.up", "prior1", "prior2",
+                           "ogsd", "ogsd.SE", "ogsd.low", "ogsd.up")]
+  
+  
+  out <- list(cov = covResult, cor = corResult, SD = SDResult)
+  
+  if (savefile) saveRDS(out, 
+                        file = paste0("ID", MCSampID, ".nG", G, ".n", n, 
+                                      "-1SFIML.rds"))
+  
+  return(out) #TODO
 }
 
+# ogsat(1, 6, 10)
+
+# > colnames(ogResult$cov)
+# [1] "par_names" "level"     "ogcov"     "ogcov.SE"  "ogcov.low" "ogcov.up"  "pop.cov"   "MCSampID" 
+# [9] "n"         "G"         "iter"      "RunTime"   "condition" "analType" 
+
+# > colnames(ogResult$cor)
+# [1] "par_names" "level"     "ogcor"     "ogcor.SE"  "ogcor.low" "ogcor.up"  "MCSampID"  "n"        
+# [9] "G"         "condition" "iter"      "RunTime"   "pop.cor"   "analType" 
+
+# > colnames(ogResult$SD)
+# [1] "par_names" "level"     "ogsd"      "ogsd.SE"   "ogsd.low"  "ogsd.up"   "MCSampID"  "n"        
+# [9] "G"         "condition" "iter"      "RunTime"   "pop.SD"    "analType" 
+
 #----
-
-# > colnames(out$cov)
-# [1] "par_names"   "s1iter"      "Ecov"        "Ecov.MCE"    "Ecov.SE"     "Ecov.low"    "Ecov.up"     "Ecov.n_eff" 
-# [9] "Ecov.Rhat"   "level"       "Mcov"        "Mcov.low"    "Mcov.up"     "pop.cov"     "MCSampID"    "n"          
-# [17] "G"           "condition"   "s1priorType" "RunTime"    
-
