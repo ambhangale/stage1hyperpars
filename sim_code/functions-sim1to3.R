@@ -1148,8 +1148,9 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 
 # function 10: stage 1 in `lavaan.srm`----
 
-s1sat <- function(MCSampID, n, G, rr.vars, IDout, IDin, IDgroup, priorType,
-                  targetCorr, pop_corMat = list(popCorr_c = getSigma()$R_c,
+s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"), 
+                  IDout = "Actor", IDin = "Partner", IDgroup = "Group", priorType,
+                  targetCorr = 0.3, pop_corMat = list(popCorr_c = getSigma()$R_c,
                                     popCorr_d = getSigma()$R_d),
                   pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
                                    popSD_d = sqrt(diag(getSigma()$SIGMA_d))),
