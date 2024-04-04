@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 3 April 2024
+## Last updated: 4 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -125,8 +125,8 @@ getSigma <- function(return_mats = TRUE){
   rownames(pop_c.SD) <- NULL
   
   # person-level correlations
-  mat_c.cor <- solve(mat_c.SD) %*% SIGMA_c %*% solve(mat_c.SD)
-  pop_c.cor <- as.data.frame(as.table(mat_c.cor))
+  # mat_c.cor <- solve(mat_c.SD) %*% SIGMA_c %*% solve(mat_c.SD) # use R_c instead
+  pop_c.cor <- as.data.frame(as.table(R_c))
   colnames(pop_c.cor) <- c("row", "col", "pop.cor")
   pop_c.cor$par_names <- paste0(pop_c.cor$row, "~~", pop_c.cor$col)
   pop_c.cor <- pop_c.cor[, c("par_names", "pop.cor")]
@@ -149,8 +149,8 @@ getSigma <- function(return_mats = TRUE){
   rownames(pop_d.SD) <- NULL
   
   # dyad-level correlations
-  mat_d.cor <- solve(mat_d.SD) %*% SIGMA_d %*% solve(mat_d.SD)
-  pop_d.cor <- as.data.frame(as.table(mat_d.cor))
+  # mat_d.cor <- solve(mat_d.SD) %*% SIGMA_d %*% solve(mat_d.SD) # use R_d instead
+  pop_d.cor <- as.data.frame(as.table(R_d))
   colnames(pop_d.cor) <- c("row", "col", "pop.cor")
   pop_d.cor$par_names <- paste0(pop_d.cor$row, "~~", pop_d.cor$col)
   pop_d.cor <- pop_d.cor[, c("par_names", "pop.cor")]
@@ -384,7 +384,7 @@ prophetic_priors <- function(pop_corMat, pop_SDvec, precision, default_prior) {
   # for correlations --- beta priors
   ## begin: case-level hyperpars----
   popCorr_c <- pop_corMat$popCorr_c
-  Fnames_c <- c("f1@A", "f1@P", "f2@A", "f2@P", "f3@A", "f3@P")
+  Fnames_c <- c("f1@A", "f1@P", "f2@A", "f2@P", "f3@A", "f3@P") # reorder names
   popCorr_c <- popCorr_c[Fnames_c, Fnames_c]
   
   # save  population correlation values
@@ -654,7 +654,7 @@ FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
   library(srm)
   library(car)
   
-  #FIXME SEs as prior precisions only implemented for `multi = FALSE`. not necessary 
+  #README SEs as prior precisions only implemented for `multi = FALSE`. not necessary 
   # to implement for `multi = TRUE`, because we are not exploring that anymore. 
   
   if (multi) {
@@ -1101,7 +1101,6 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
                        precision, multiMLE = FALSE) {
   prior_env <- new.env()
   prior_env$default_prior <- srm_priors(data = data[rr.vars]) # default MCMC priors (diffuse priors)
-  #FIXME does the above need to be `rr.data` instead of `data`?
  
  if (priorType == "default") { # default (diffuse) priors
    srmPriors <- get("default_prior", envir = prior_env)
@@ -1129,7 +1128,7 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 }
 
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "default")
-# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"),priorType = "prophetic", 
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"),priorType = "prophetic",
 #            precision = 0.1)
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "thoughtful",
 #            targetCorr = 0.3, precision = 0.1)
@@ -1445,9 +1444,9 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1pM.SD <- subset(s1pM.SD, select = c("par_names", "Freq"))
   names(s1pM.SD)[names(s1pM.SD) == "Freq"] <- "Msd"
   s1pM.SD$Msd.low <- summary(s1ests, component = "case", 
-                             posterior.est = "mode")$case$sd$central["lower",] # lower CI limit
+                             posterior.est = "mode")$case$sd$central["lower",] # lower hdi limit
   s1pM.SD$Msd.up <- summary(s1ests, component = "case", 
-                             posterior.est = "mode")$case$sd$central["upper",] # upper CI limit
+                             posterior.est = "mode")$case$sd$central["upper",] # upper hdi limit
   
   pSD <- merge(pSD, s1pM.SD, by = "par_names")
   
@@ -1472,9 +1471,9 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1dM.SD <- subset(s1dM.SD, select = c("par_names", "Freq"))
   names(s1dM.SD)[names(s1dM.SD) == "Freq"] <- "Msd"
   s1dM.SD$Msd.low <- summary(s1ests, component = "dyad", 
-                             posterior.est = "mode")$dyad$sd$central["lower",] # lower CI limit
+                             posterior.est = "mode")$dyad$sd$central["lower",] # lower hdi limit
   s1dM.SD$Msd.up <- summary(s1ests, component = "dyad", 
-                             posterior.est = "mode")$dyad$sd$central["upper",] # upper CI limit
+                             posterior.est = "mode")$dyad$sd$central["upper",] # upper hdi limit
   
   dSD <- merge(dSD, s1dM.SD, by = "par_names")
   
