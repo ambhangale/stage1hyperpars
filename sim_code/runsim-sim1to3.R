@@ -45,15 +45,15 @@ registerDoSNOW(cl)
 
 # run simulation
 ogResult <- foreach(row_num = 1:nrow(og_grid),
-                    .packages = c("mnormt", "parallel", "portableParallelSeeds",
-                                  "TripleR", "srm", "car", "lavaan.srm")) %dopar% {
+                    .packages = c("mnormt", "parallel", "portableParallelSeeds", 
+                                  "srm", "car")) %dopar% {
   
   out <- try(ogsat(MCSampID = og_grid[row_num, ]$MCSampID, og_grid[row_num, ]$n, 
                og_grid[row_num, ]$G), silent = T)
   if(inherits(out, "try-error")) out <- NULL
   
   return(out)
-} #TODO try this again after removing TripleR and lavaan.srm because you don't need these for og
+} 
 
 s1Result <- foreach(row_num = 1:nrow(s1_grid),
                     .packages = c("mnormt", "parallel", "portableParallelSeeds",
