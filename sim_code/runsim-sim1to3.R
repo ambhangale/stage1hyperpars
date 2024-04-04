@@ -21,7 +21,7 @@ library(doSNOW)
 # common conditions for ogsat() and s1sat()
 n <- c(6, 8, 10, 20)
 G <- c(10, 25)
-MCSampID <- 1:5
+MCSampID <- 1:32
 
 # specific conditions for s1sat()
 priorType <- c("default", "thoughtful", "prophetic", "ANOVA", "FIML")
