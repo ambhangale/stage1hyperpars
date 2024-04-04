@@ -38,8 +38,7 @@ s1_grid$row_num <- 1:nrow(s1_grid)
 
 
 # prepare parallel processing
-# nClus <- 32
-nClus <- parallel::detectCores() - 1
+nClus <- 32
 cl <- makeCluster(nClus)
 registerDoSNOW(cl)
 
