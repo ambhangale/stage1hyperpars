@@ -3,7 +3,7 @@
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
-# Simulations 1 and 2
+# Simulations 1 to 3
 
 # rm(list = ls())
 
@@ -18,6 +18,10 @@
 # targetCorr <- 0.3
 # priorType = "default"
 # iter = 10
+
+#####################################
+# FUNCTIONS FOR SIMULATIONS 1-3 ----
+#####################################
 
 # function 0: generate level-specific (co)variance matrices----
 
@@ -1960,4 +1964,74 @@ ogsat <- function(MCSampID, n, G, savefile = FALSE) {
 # ogsat(1, 6, 10)
 
 #----
+
+#######
+
+##############################
+# RUN SIMULATIONS 1 AND 2 ----
+##############################
+
+library(doSNOW)
+
+## conditions
+# 8 (analType/prior) x 4 (n; group size) x 2 (G; number of groups)
+## create separate runsim functions for ogsat and s1sat 
+
+# common conditions for ogsat() and s1sat()
+n <- c(6, 8, 10, 20)
+G <- c(10, 25)
+MCSampID <- 1:32
+
+# specific conditions for s1sat()
+priorType <- c("default", "thoughtful", "prophetic", "ANOVA", "FIML")
+# precision specified within expand.grid()
+
+# all conditions
+og_grid <- expand.grid(MCSampID = MCSampID, n = n, G = G)
+og_grid$row_num <- 1:nrow(og_grid)
+
+s1_grid <- rbind(expand.grid(MCSampID = MCSampID, n = n, G = G,
+                             priorType = priorType, precision = 0.1),
+                 expand.grid(MCSampID = MCSampID, n = n, G = G,
+                             priorType = "prophetic", precision = c(0.05, 0.2)))
+s1_grid$row_num <- 1:nrow(s1_grid)
+
+# prepare parallel processing
+nClus <- 32
+cl <- makeCluster(nClus)
+registerDoSNOW(cl)
+
+# run simulation
+ogResult <- foreach(row_num = 1:nrow(og_grid),
+                    .packages = c("mnormt", "parallel", "portableParallelSeeds", 
+                                  "srm", "car")) %dopar% {
+                                    
+                                    out <- try(ogsat(MCSampID = og_grid[row_num, ]$MCSampID, og_grid[row_num, ]$n, 
+                                                     og_grid[row_num, ]$G), silent = T)
+                                    if(inherits(out, "try-error")) out <- NULL
+                                    
+                                    return(out)
+                                  } 
+
+s1Result <- foreach(row_num = 1:nrow(s1_grid),
+                    .packages = c("mnormt", "parallel", "portableParallelSeeds",
+                                  "TripleR", "srm", "car", "lavaan.srm", "coda")) %dopar% {
+                                    
+                                    out <- try(s1sat(MCSampID = s1_grid[row_num, ]$MCSampID, 
+                                                     n = s1_grid[row_num, ]$n, G = s1_grid[row_num, ]$G,
+                                                     priorType = s1_grid[row_num, ]$priorType, 
+                                                     precision = s1_grid[row_num, ]$precision), silent = T)
+                                    if(inherits(out, "try-error")) out <- NULL
+                                    
+                                    return(out)
+                                  }
+
+# close cluster
+stopCluster(cl)
+
+# save results
+saveRDS(ogResult, paste0("results_1S-FIML-", Sys.Date(),".rds"))
+saveRDS(s1Result, paste0("results_MCMC-", Sys.Date(),".rds"))
+
+#######
 
