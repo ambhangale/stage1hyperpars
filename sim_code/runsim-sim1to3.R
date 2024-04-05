@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 4 April 2024
+## Last updated: 5 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -56,7 +56,7 @@ ogResult <- foreach(row_num = 1:nrow(og_grid),
 
 s1Result <- foreach(row_num = 1:nrow(s1_grid),
                     .packages = c("mnormt", "parallel", "portableParallelSeeds",
-                                  "TripleR", "srm", "car", "lavaan.srm")) %dopar% {
+                                  "TripleR", "srm", "car", "lavaan.srm", "coda")) %dopar% {
   
   out <- try(s1sat(MCSampID = s1_grid[row_num, ]$MCSampID, 
                n = s1_grid[row_num, ]$n, G = s1_grid[row_num, ]$G,
@@ -71,5 +71,5 @@ s1Result <- foreach(row_num = 1:nrow(s1_grid),
 stopCluster(cl)
 
 # save results
-saveRDS(ogResult, "results_1S-FIML.rds")
-saveRDS(s1Result, "results_MCMC.rds")
+saveRDS(ogResult, paste0("results_1S-FIML-", Sys.Date(),".rds"))
+saveRDS(s1Result, paste0("results_MCMC-", Sys.Date(),".rds"))
