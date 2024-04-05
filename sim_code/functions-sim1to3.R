@@ -1984,7 +1984,7 @@ MCSampID <- 1:32
 
 # specific conditions for s1sat()
 priorType <- c("default", "thoughtful", "prophetic", "ANOVA", "FIML")
-# precision specified within expand.grid()
+# precision specified within expand.grid
 
 # all conditions
 og_grid <- expand.grid(MCSampID = MCSampID, n = n, G = G)
