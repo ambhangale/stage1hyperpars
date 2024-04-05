@@ -14,4 +14,4 @@ cd $SLURM_SUBMIT_DIR
 module load R/4.2.2
 export MKL_NUM_THREADS=1
 
-Rscript --vanilla runsim-sim1to3.R
+Rscript --vanilla functions-sim1to3.R
