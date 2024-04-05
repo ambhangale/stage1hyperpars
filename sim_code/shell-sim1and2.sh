@@ -5,7 +5,7 @@
 #SBATCH -o sim1and2.SOUT
 #SBATCH -N 1
 #SBATCH --cpus-per-task 32
-#SBACTH -t 3-20:00:00
+#SBATCH -t 3-20:00:00
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=aditibhangale@gmail.com
 
