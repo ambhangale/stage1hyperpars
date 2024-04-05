@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 4 April 2024
+## Last updated: 5 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1155,9 +1155,14 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                    popSD_d = sqrt(diag(getSigma()$SIGMA_d))),
                   precision = 0.1, multiMLE = FALSE, iter = 2000, savefile = FALSE) {
   library(lavaan.srm)
+  library(coda) # for gelman.diag()
+  library(rstan) # for As.mcmc.list()
   
   s1_env <- new.env()
   s1_env$dat <- genGroups(MCSampID = MCSampID, n = n, G = G)
+  s1_env$MCMC_pars <- c("s_rr", "S_p", "r_d2", 
+                        paste0("Rp[", combn(1:6, 2, paste0, 
+                                            collapse = ","), "]")) # save non-redundant MCMC parameter labels
   t0 <- Sys.time()
   
   if (priorType == "default") { # default
@@ -1169,17 +1174,25 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
+    ## compute mPSRF
+    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
-    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+    if (mPSRF > 1.05) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                        probs = c(0.025, 0.975))$summary))
+      ## compute mPSRF
+      mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "thoughtful" && !missing(targetCorr)) { # thoughtful
@@ -1192,17 +1205,25 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
+    ## compute mPSRF
+    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                      probs = c(0.025, 0.975))$summary))
+                                                    probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
-    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+    if (mPSRF > 1.05) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                          probs = c(0.025, 0.975))$summary))
+      ## compute mPSRF
+      mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "prophetic") { # prophetic
@@ -1214,17 +1235,25 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
+    ## compute mPSRF
+    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                      probs = c(0.025, 0.975))$summary))
+                                                    probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
-    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+    if (mPSRF > 1.05) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                          probs = c(0.025, 0.975))$summary))
+      ## compute mPSRF
+      mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "ANOVA" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # ANOVA
@@ -1236,17 +1265,25 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
+    ## compute mPSRF
+    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                      probs = c(0.025, 0.975))$summary))
+                                                    probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
-    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+    if (mPSRF > 1.05) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                          probs = c(0.025, 0.975))$summary))
+      ## compute mPSRF
+      mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
   } else if (priorType == "FIML" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # FIML
@@ -1259,18 +1296,26 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
     
+    ## compute mPSRF
+    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                      probs = c(0.025, 0.975))$summary))
+                                                    probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     
-    if (any(s1long$ne_eff < 100, na.rm = T) | any(s1long$Rhat > 1.05, na.rm = T)) {
+    if (mPSRF > 1.05) {
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                       iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                          probs = c(0.025, 0.975))$summary))
-      s1long <- s1long[-nrow(s1long), ]
+      ## compute mPSRF
+    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
+    s1long <- s1long[-nrow(s1long), ]
     }
   }
   t1 <- Sys.time()
@@ -1599,7 +1644,11 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   SD$ogsd <- NA; SD$ogsd.SE <- NA; SD$ogsd.low <- NA; SD$ogsd.up <- NA
   
   # combine covariances and correlations + SDs as list
-  out <- list(cov = Sigma, cor = R, SD = SD)
+  out <- list(cov = Sigma, cor = R, SD = SD, 
+              mPSRF = c(MCSampID = MCSampID, condition = paste0(n, "-", G), 
+                        analType = paste0("MCMC-", priorType, "-", 
+                                          ifelse(!missing(precision), precision, "SE")),
+                        mPSRF = mPSRF))
   
   # end: compiling final results ----
   
@@ -1617,19 +1666,19 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
-#       iter = 10)
+#       iter = 100)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3,
-#       precision = 0.1, iter = 10)
+#       precision = 0.1, iter = 100)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "prophetic",
-#       precision = 0.1, iter = 10)
+#       precision = 0.1, iter = 100)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "ANOVA",
-#       precision = 0.1, iter = 10)
+#       precision = 0.1, iter = 100)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
-#       precision = 0.1, multiMLE = F, iter = 10)
+#       precision = 0.1, multiMLE = F, iter = 100)
 
 #----
 
