@@ -2035,8 +2035,9 @@ if (analType == "FIML1S") {
          # close cluster\n
           stopCluster(cl)
          
-         saveRDS(s1Result, paste0("results_', analType, '-', precision, '-',
-         sim,'-", Sys.Date(),".rds")) #FIXME
+         saveRDS(s1Result, paste0("results_', analType, '-', ifelse(!is.null(precision), 
+                                                                    paste0("-", precision), ""),
+         sim,'-", Sys.Date(),".rds"))
          
          ')
 }
@@ -2066,7 +2067,7 @@ if (analType == "FIML1S") {
 
 #TODO test all the below out with one sample to check if the code works as expected
 # makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "default",
-#            sim = "sim1") 
+#            sim = "sim1") #FIXME something weird is up
 # makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
 #            precision = 0.05, sim = "sim1")
 # makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
@@ -2102,7 +2103,7 @@ cd $SLURM_SUBMIT_DIR
 module load R/4.2.2
 export MKL_NUM_THREADS=1
 
-Rscript --vanilla', paste0("runsim-", analType, ifelse(!is.null(precision), 
+Rscript --vanilla ', paste0("runsim-", analType, ifelse(!is.null(precision), 
                                                        paste0("-", precision), ""), "-", sim, ".R")
 
 )
@@ -2111,9 +2112,9 @@ Rscript --vanilla', paste0("runsim-", analType, ifelse(!is.null(precision),
   invisible(NULL)
 }
 
-makeShell(analType = "FIML1S", sim = "sim1", wallTime = "00:05:00")
+# makeShell(analType = "FIML1S", sim = "sim1", wallTime = "00:05:00")
 
-#TODO test all the above to check if the code works as expected
+#TODO test all conditions to check if the code works as expected
 
 #----
 
