@@ -2055,7 +2055,7 @@ if (analType == "FIML1S") {
 #            precision = 0.1, sim = "sim1")
 # makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "prophetic",
 #            precision = 0.2, sim = "sim1")
-# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML1S", 
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML1S",
 #            sim = "sim1")
 # makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "thoughtful",
 #            precision = 0.1, sim = "sim2")
@@ -2064,12 +2064,56 @@ if (analType == "FIML1S") {
 # makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML",
 #            precision = 0.1, sim = "sim2")
 
-#TODO test all the above out with one sample to check if the code works as expected
+#TODO test all the below out with one sample to check if the code works as expected
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "default",
+#            sim = "sim1") 
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
+#            precision = 0.05, sim = "sim1")
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
+#            precision = 0.1, sim = "sim1")
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
+#            precision = 0.2, sim = "sim1")
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "FIML1S",
+#            sim = "sim1")
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "thoughtful",
+#            precision = 0.1, sim = "sim2")
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "ANOVA",
+#            precision = 0.1, sim = "sim2")
+# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "FIML",
+#            precision = 0.1, sim = "sim2")
 
 #----
 
 # function 13: create shell files----
-# makeShell <- function()
+makeShell <- function(analType, precision = NULL, sim, wallTime) {
+  shell <- paste0('#!/bin/bash
+
+#SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("-", precision), ""), "-", sim),'
+#SBATCH -e ', paste0(analType, ifelse(!is.null(precision), paste0("-", precision), ""), "-", sim),'.SERR
+#SBATCH -o ', paste0(analType, ifelse(!is.null(precision), paste0("-", precision), ""), "-", sim),'.SOUT
+#SBATCH -N 1
+#SBATCH --cpus-per-task 32
+#SBATCH -t ', wallTime,'
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=aditibhangale@gmail.com
+
+cd $SLURM_SUBMIT_DIR
+
+module load R/4.2.2
+export MKL_NUM_THREADS=1
+
+Rscript --vanilla', paste0("runsim-", analType, ifelse(!is.null(precision), 
+                                                       paste0("-", precision), ""), "-", sim, ".R")
+
+)
+  cat(shell, file = paste0("shell-", analType, ifelse(!is.null(precision), 
+                                                      paste0("-", precision), ""), "-", sim, ".sh"))
+  invisible(NULL)
+}
+
+makeShell(analType = "FIML1S", sim = "sim1", wallTime = "00:05:00")
+
+#TODO test all the above to check if the code works as expected
 
 #----
 
