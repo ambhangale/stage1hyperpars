@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 5 April 2024
+## Last updated: 8 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -338,7 +338,7 @@ thoughtful_priors <- function(targetCorr, precision, default_prior) {
   
   # for SDs --- t-priors
   ## m for SDs is already thoughtful/approximate location because lavaan.srm estimates
-  ## it based on the data
+  ## are based on the data
   priors$rr_in_t$sd <- priors$rr_out_t$sd <- 
     priors$rr_rel_t$sd <- rep(precision, times = 3) # set SD of t-priors to 0.1
   
@@ -1965,73 +1965,112 @@ ogsat <- function(MCSampID, n, G, savefile = FALSE) {
 
 #----
 
-#######
+# function 12: create runsim files----
 
-##############################
-# RUN SIMULATIONS 1 AND 2 ----
-##############################
+# README: in this function, 1S-FIML = FIML1S when analType is single-stage FIML
 
+makeRunsim <- function(nSamps, n, G, analType, precision = NULL, sim) {
+  runsimfile <- paste0('## Aditi M. Bhangale
+## Last updated:', Sys.Date(), 
+
+'\n# Hyperparameters of empirical Bayes priors for MCMC estimation of the 
+# multivariate social relations model
+# Simulations 1 to 3
+
+# runsim-',analType, ifelse(!is.null(precision), paste0("-", precision), ""), '-', sim,'
+
+source("functions-sim1to3.R")
+
+# specify conditions\n',
+
+analType,'_grid <- expand.grid(MCSampID =1:', nSamps, ', n =', n, ', G = ', G, ',',
+                              ifelse(analType != "FIML1S", paste0('priorType = "', analType, '"'), 
+                                     paste0('priorType = "NA"')), ',',
+                              ifelse(!is.null(precision), paste0('precision = ', precision), 
+                                     paste0('priorType = "NA"')),',
+                              stringsAsFactors = F)\n',
+
+analType,'_grid$row_num <- 1:nrow(', analType,'_grid)
+
+# prepare parallel processing\n
 library(doSNOW)
 
-## conditions
-# 8 (analType/prior) x 4 (n; group size) x 2 (G; number of groups)
-## create separate runsim functions for ogsat and s1sat 
-
-# common conditions for ogsat() and s1sat()
-n <- c(6, 8, 10, 20)
-G <- c(10, 25)
-MCSampID <- 1:32
-
-# specific conditions for s1sat()
-priorType <- c("default", "thoughtful", "prophetic", "ANOVA", "FIML")
-# precision specified within expand.grid
-
-# all conditions
-og_grid <- expand.grid(MCSampID = MCSampID, n = n, G = G)
-og_grid$row_num <- 1:nrow(og_grid)
-
-s1_grid <- rbind(expand.grid(MCSampID = MCSampID, n = n, G = G,
-                             priorType = priorType, precision = 0.1),
-                 expand.grid(MCSampID = MCSampID, n = n, G = G,
-                             priorType = "prophetic", precision = c(0.05, 0.2)))
-s1_grid$row_num <- 1:nrow(s1_grid)
-
-# prepare parallel processing
 nClus <- 32
 cl <- makeCluster(nClus)
 registerDoSNOW(cl)
 
-# run simulation
-ogResult <- foreach(row_num = 1:nrow(og_grid),
+# run simulation\n',
+if (analType == "FIML1S") {
+  paste0('ogResult <- foreach(row_num = 1:nrow(',analType,'_grid),
                     .packages = c("mnormt", "parallel", "portableParallelSeeds", 
                                   "srm", "car")) %dopar% {
                                     
-                                    out <- try(ogsat(MCSampID = og_grid[row_num, ]$MCSampID, og_grid[row_num, ]$n, 
-                                                     og_grid[row_num, ]$G), silent = T)
-                                    if(inherits(out, "try-error")) out <- NULL
-                                    
-                                    return(out)
-                                  } 
-
-s1Result <- foreach(row_num = 1:nrow(s1_grid),
-                    .packages = c("mnormt", "parallel", "portableParallelSeeds",
-                                  "TripleR", "srm", "car", "lavaan.srm", "coda")) %dopar% {
-                                    
-                                    out <- try(s1sat(MCSampID = s1_grid[row_num, ]$MCSampID, 
-                                                     n = s1_grid[row_num, ]$n, G = s1_grid[row_num, ]$G,
-                                                     priorType = s1_grid[row_num, ]$priorType, 
-                                                     precision = s1_grid[row_num, ]$precision), silent = T)
+                                    out <- try(ogsat(MCSampID = ',analType,'_grid[row_num, ]$MCSampID, 
+                                    n = ',analType,'_grid[row_num, ]$n, 
+                                                    G = ',analType,'_grid[row_num, ]$G), silent = T)
                                     if(inherits(out, "try-error")) out <- NULL
                                     
                                     return(out)
                                   }
+         
+   # close cluster\n
+   stopCluster(cl)
+   
+   saveRDS(ogResult, paste0("results_', analType,'-',sim, '-",Sys.Date(),".rds")) #FIXME
+         ')
+} else {
+  paste0('s1Result <- foreach(row_num = 1:nrow(',analType,'_grid),
+                    .packages = c("mnormt", "parallel", "portableParallelSeeds",
+                                  "TripleR", "srm", "car", "lavaan.srm", "coda")) %dopar% {
+                                    
+                                    out <- try(s1sat(MCSampID = ',analType,'_grid[row_num, ]$MCSampID, 
+                                                     n = ',analType,'_grid[row_num, ]$n, G = ',analType,'_grid[row_num, ]$G,
+                                                     priorType = ',analType,'_grid[row_num, ]$priorType, 
+                                                     precision = ',analType,'_grid[row_num, ]$precision), silent = T)
+                                    if(inherits(out, "try-error")) out <- NULL
+                                    
+                                    return(out)
+                                  }
+         
+         # close cluster\n
+          stopCluster(cl)
+         
+         saveRDS(s1Result, paste0("results_', analType, '-', precision, '-',
+         sim,'-", Sys.Date(),".rds")) #FIXME
+         
+         ')
+}
+)
+ 
+  cat(runsimfile, file = paste0("runsim-", analType, ifelse(!is.null(precision), paste0("-", precision), ""), "-", sim, ".R"))
+  invisible(NULL)
+}
 
-# close cluster
-stopCluster(cl)
+## make runsim files for all conditions (simulations 1 and 2)
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "default",
+#            sim = "sim1")
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "prophetic",
+#            precision = 0.05, sim = "sim1")
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "prophetic",
+#            precision = 0.1, sim = "sim1")
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "prophetic",
+#            precision = 0.2, sim = "sim1")
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML1S", 
+#            sim = "sim1")
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "thoughtful",
+#            precision = 0.1, sim = "sim2")
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "ANOVA",
+#            precision = 0.1, sim = "sim2")
+# makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML",
+#            precision = 0.1, sim = "sim2")
 
-# save results
-saveRDS(ogResult, paste0("results_1S-FIML-", Sys.Date(),".rds"))
-saveRDS(s1Result, paste0("results_MCMC-", Sys.Date(),".rds"))
+#TODO test all the above out with one sample to check if the code works as expected
+
+#----
+
+# function 13: create shell files----
+# makeShell <- function()
+
+#----
 
 #######
-
