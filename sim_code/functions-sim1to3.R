@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 8 April 2024
+## Last updated: 9 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1985,9 +1985,9 @@ source("functions-sim1to3.R")
 
 analType,'_grid <- expand.grid(MCSampID =1:', nSamps, ', n =', n, ', G = ', G, ',',
                               ifelse(analType != "FIML1S", paste0('priorType = "', analType, '"'), 
-                                     paste0('priorType = "NA"')), ',',
+                                     paste0('priorType = NA')), ',',
                               ifelse(!is.null(precision), paste0('precision = ', precision), 
-                                     paste0('priorType = "NA"')),',
+                                     paste0('precision = NA')),',
                               stringsAsFactors = F)\n',
 
 analType,'_grid$row_num <- 1:nrow(', analType,'_grid)
@@ -2016,12 +2016,13 @@ if (analType == "FIML1S") {
    # close cluster\n
    stopCluster(cl)
    
-   saveRDS(ogResult, paste0("results_', analType,'-',sim, '-",Sys.Date(),".rds")) #FIXME
+   saveRDS(ogResult, paste0("results_', analType,'-',sim, '-",Sys.Date(),".rds"))
          ')
 } else {
   paste0('s1Result <- foreach(row_num = 1:nrow(',analType,'_grid),
                     .packages = c("mnormt", "parallel", "portableParallelSeeds",
-                                  "TripleR", "srm", "car", "lavaan.srm", "coda")) %dopar% {
+                                  "TripleR", "srm", "car", "lavaan.srm", "coda",
+                                  "modeest", "HDInterval", "rstan")) %dopar% {
                                     
                                     out <- try(s1sat(MCSampID = ',analType,'_grid[row_num, ]$MCSampID, 
                                                      n = ',analType,'_grid[row_num, ]$n, G = ',analType,'_grid[row_num, ]$G,
@@ -2036,7 +2037,7 @@ if (analType == "FIML1S") {
           stopCluster(cl)
          
          saveRDS(s1Result, paste0("results_', analType, '-', ifelse(!is.null(precision), 
-                                                                    paste0("-", precision), ""),
+                                                                    paste0(precision, "-"), ""),
          sim,'-", Sys.Date(),".rds"))
          
          ')
