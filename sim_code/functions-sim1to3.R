@@ -1199,7 +1199,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                       probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
-  } else if (priorType == "thoughtful" && !missing(targetCorr)) { # thoughtful
+  } else if (priorType == "thoughtful") { # thoughtful
     rr.data <- get("dat", envir = s1_env)
     
     s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
@@ -1260,7 +1260,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                       probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
-  } else if (priorType == "ANOVA" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # ANOVA
+  } else if (priorType == "ANOVA") { # ANOVA
     rr.data <- get("dat", envir = s1_env)
     
     s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
@@ -1290,7 +1290,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                       probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
-  } else if (priorType == "FIML" && !missing(IDout) && !missing(IDin) && !missing(IDgroup)) { # FIML
+  } else if (priorType == "FIML") { # FIML
     rr.data <- get("dat", envir = s1_env)
     
     s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
@@ -1671,7 +1671,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
 #       iter = 100)
-# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+# s1sat(MCSampID = 1, n = 6, G = 10, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3,
 #       precision = 0.1, iter = 100)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
@@ -2067,22 +2067,22 @@ if (analType == "FIML1S") {
 #            precision = 0.1, sim = "sim2")
 
 #TODO test all the below out with one sample to check if the code works as expected
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "default",
-#            sim = "sim1") #FIXME something weird is up
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
-#            precision = 0.05, sim = "sim1")
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
-#            precision = 0.1, sim = "sim1")
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "prophetic",
-#            precision = 0.2, sim = "sim1")
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "FIML1S",
-#            sim = "sim1")
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "thoughtful",
-#            precision = 0.1, sim = "sim2")
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "ANOVA",
-#            precision = 0.1, sim = "sim2")
-# makeRunsim(nSamps = 1, n = "c(6,8)", G = 10, analType = "FIML",
-#            precision = 0.1, sim = "sim2")
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "default",
+#            sim = "sim1") # worked, ran 46.62 mins
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "prophetic",
+#            precision = 0.05, sim = "sim1") # worked, ran 2.52 mins
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "prophetic",
+#            precision = 0.1, sim = "sim1") # worked, ran 3.15 mins
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "prophetic",
+#            precision = 0.2, sim = "sim1") # worked, ran 17.65 mins
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "FIML1S",
+#            sim = "sim1") # worked, ran 0.02 mins
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "thoughtful",
+#            precision = 0.1, sim = "sim2") # worked, ran for 2.19 minutes
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "ANOVA",
+#            precision = 0.1, sim = "sim2") #FIXME does NOT work, why?? says "s1long" not found
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "FIML",
+#            precision = 0.1, sim = "sim2") #FIXME does NOT work, why?? says "s1long" not found
 
 #----
 
@@ -2114,6 +2114,8 @@ Rscript --vanilla ', paste0("runsim-", analType, ifelse(!is.null(precision),
 }
 
 # makeShell(analType = "FIML1S", sim = "sim1", wallTime = "00:05:00")
+# makeShell(analType = "default", sim = "sim1", wallTime = "00:15:00")
+# makeShell(analType = "ANOVA", sim = "sim2", wallTime = "01:00:00")
 
 #TODO test all conditions to check if the code works as expected
 
