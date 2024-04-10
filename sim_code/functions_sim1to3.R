@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 9 April 2024
+## Last updated: 10 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1983,7 +1983,7 @@ source("functions_sim1to3.R")
 
 # specify conditions\n',
 
-analType,'_grid <- expand.grid(MCSampID =1:', nSamps, ', n =', n, ', G = ', G, ',',
+analType,'_grid <- expand.grid(MCSampID = 1:', nSamps, ', n = ', n, ', G = ', G, ',',
                               ifelse(analType != "FIML1S", paste0('priorType = "', analType, '"'), 
                                      paste0('priorType = NA')), ',',
                               ifelse(!is.null(precision), paste0('precision = ', precision), 
@@ -2087,31 +2087,81 @@ if (analType == "FIML1S") {
 #----
 
 # function 13: create shell files----
-makeShell <- function(analType, precision = NULL, sim, wallTime) {
+
+makeShSnellius <- function(analType, precision = NULL, sim, wallTime) {
   shell <- paste0('#!/bin/bash
 
 #SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'
 #SBATCH -e ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SERR
 #SBATCH -o ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SOUT
 #SBATCH -N 1
-#SBATCH --cpus-per-task 32
+#SBATCH -n 32
 #SBATCH -t ', wallTime,'
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=aditibhangale@gmail.com
 
-cd $SLURM_SUBMIT_DIR
+cd "$TMPDIR"
 
-module load R/4.2.2
+module load 2023
+module load R/4.3.2-gfbf-2023a
 export MKL_NUM_THREADS=1
 
+export R_LIBS=$HOME/rpackages:$R_LIBS
+
+cp $HOME/SR-SEM/stage1hyperpars/functions_sim1to3.R "$TMPDIR"
+cp $HOME/SR-SEM/stage1hyperpars/', paste0("runsim_", analType, ifelse(!is.null(precision), 
+                                                                      paste0("_", precision), ""), "_", sim, ".R"),' "$TMPDIR"
+
 Rscript --vanilla ', paste0("runsim_", analType, ifelse(!is.null(precision), 
-                                                       paste0("_", precision), ""), "_", sim, ".R")
+                                                        paste0("_", precision), ""), "_", sim, ".R"),'
+
+cp "$TMPDIR"/*.rds $HOME/SR-SEM/stage1hyperpars/' 
 
 )
   cat(shell, file = paste0("shell_", analType, ifelse(!is.null(precision), 
                                                       paste0("_", precision), ""), "_", sim, ".sh"))
   invisible(NULL)
 }
+
+#check
+# makeShSnellius(analType = "default", sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(analType = "prophetic", precision = 0.05, sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(analType = "prophetic", precision = 0.1, sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(analType = "prophetic", precision = 0.2, sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(analType = "FIML1S", sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(analType = "thoughtful", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
+# makeShSnellius(analType = "ANOVA", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
+# makeShSnellius(analType = "FIML", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
+
+#----
+
+# function 14: old function to create shell files (for Mau's HPC)----
+
+# makeShell <- function(analType, precision = NULL, sim, wallTime) {
+#   shell <- paste0('#!/bin/bash
+# 
+# #SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'
+# #SBATCH -e ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SERR
+# #SBATCH -o ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SOUT
+# #SBATCH -N 1
+# #SBATCH --cpus-per-task 32
+# #SBATCH -t ', wallTime,'
+# #SBATCH --mail-type=ALL
+# #SBATCH --mail-user=aditibhangale@gmail.com
+# 
+# cd $SLURM_SUBMIT_DIR
+# 
+# module load R/4.2.2
+# export MKL_NUM_THREADS=1
+# 
+# Rscript --vanilla ', paste0("runsim_", analType, ifelse(!is.null(precision), 
+#                                                         paste0("_", precision), ""), "_", sim, ".R")
+# 
+#   )
+#   cat(shell, file = paste0("shell_", analType, ifelse(!is.null(precision), 
+#                                                       paste0("_", precision), ""), "_", sim, ".sh"))
+#   invisible(NULL)
+# }
 
 #checked that the text in the shell files below was correct
 # makeShell(analType = "default", sim = "sim1", wallTime = "10-23:59:59")
