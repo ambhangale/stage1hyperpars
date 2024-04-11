@@ -1180,7 +1180,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     
     ## compute mPSRF
     mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
     
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1193,7 +1193,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
       s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1211,7 +1211,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     
     ## compute mPSRF
     mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
     
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                     probs = c(0.025, 0.975))$summary))
@@ -1224,7 +1224,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
       s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1241,7 +1241,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     
     ## compute mPSRF
     mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
     
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                     probs = c(0.025, 0.975))$summary))
@@ -1254,7 +1254,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
       s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1271,7 +1271,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     
     ## compute mPSRF
     mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
     
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                     probs = c(0.025, 0.975))$summary))
@@ -1284,7 +1284,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-      mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+      mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
       s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
@@ -1302,7 +1302,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     
     ## compute mPSRF
     mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
     
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                     probs = c(0.025, 0.975))$summary))
@@ -1315,7 +1315,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       
       ## compute mPSRF
     mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-    mPSRF <- gelman.diag(mcmcList, autoburnin = F)$mpsrf
+    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
     
     s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
