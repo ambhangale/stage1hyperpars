@@ -2093,8 +2093,8 @@ makeShSnellius <- function(n, G, analType, precision = NULL, sim, wallTime) {
   shell <- paste0('#!/bin/bash
 
 #SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'
-#SBATCH -e ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SERR
-#SBATCH -o ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SOUT
+#SBATCH -e .', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SERR
+#SBATCH -o .', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SOUT
 #SBATCH -N 1
 #SBATCH -n 128
 #SBATCH -t ', wallTime,'
