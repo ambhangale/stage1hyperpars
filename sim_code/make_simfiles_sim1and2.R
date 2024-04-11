@@ -44,6 +44,21 @@ simCondsB$wallTime <- c("12:00:00", "14:00:00", "1-12:00:00", "2-12:00:00", # de
                 "05:00:00", "14:00:00", "18:00:00", "22:00:00" # FIML1S_G25
                 )
 
+# function to create submitall shell scripts
+submitAllconds <- function(analType) {
+  submit <- paste0("#!/bin/bash
+                   
+for ", analType, "script in shell_", analType, "*.sh; do
+
+sbatch $", analType, "script
+
+done")
+  
+  cat(submit, file = paste0("submitall_", analType, ".sh"))
+  invisible(NULL)
+  
+}
+
 # generate files  
 for(i in 1:nrow(simCondsA)) {
   makeRunsim(nSamps = simCondsA[i, ]$nSamps, n = simCondsA[i, ]$n, 
@@ -53,6 +68,7 @@ for(i in 1:nrow(simCondsA)) {
                  G = simCondsA[i, ]$G, analType = simCondsA[i, ]$analType, 
                  precision = simCondsA[i, ]$precision, sim = simCondsA[i, ]$sim,
                  wallTime = simCondsA[i, ]$wallTime)
+  submitAllconds(analType = simCondsA[i, ]$analType)
 }
 
 for(i in 1:nrow(simCondsB)) {
@@ -63,5 +79,6 @@ for(i in 1:nrow(simCondsB)) {
                  G = simCondsB[i, ]$G, analType = simCondsB[i, ]$analType, 
                  precision = simCondsB[i, ]$precision, sim = simCondsB[i, ]$sim,
                  wallTime = simCondsB[i, ]$wallTime)
+  submitAllconds(analType = simCondsB[i, ]$analType)
 }
 
