@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 4 April 2024
+## Last updated: 5 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model

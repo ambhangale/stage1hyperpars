@@ -34,8 +34,6 @@ simCondsA$wallTime <- c("06:00:00", "10:00:00", "14:00:00", "1-02:00:00", # prop
                           "2-08:00:00", "2-12:00:00", "3-02:00:00", "3-20:00:00" # FIML_0.1_G25
 )
 
-# simCondsA$row_num <- 1:nrow(simCondsA)
-
 # simConds for analTypes without precisions
 simCondsB <- expand.grid(nSamps = 1000, n = c(6,8,10,20), G = c(10,25),
             analType = c("default", "FIML1S"), sim = "sim1")
@@ -46,7 +44,6 @@ simCondsB$wallTime <- c("12:00:00", "14:00:00", "1-12:00:00", "2-12:00:00", # de
                 "05:00:00", "14:00:00", "18:00:00", "22:00:00" # FIML1S_G25
                 )
 
-# simCondsB$row_num <- 1:nrow(simCondsB)
   
 for(i in 1:nrow(simCondsA)) {
   makeRunsim(nSamps = simCondsA[i, ]$nSamps, n = simCondsA[i, ]$n, 

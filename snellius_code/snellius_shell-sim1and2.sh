@@ -1,4 +1,4 @@
-#!/bin/bash
+"$TMP#!/bin/bash
 
 #SBATCH -J sim1and2
 #SBATCH -e sim1and2.SERR

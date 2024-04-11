@@ -5,7 +5,9 @@
 # multivariate social relations model
 # Simulations 1 to 3
 
+# POSTPROCESSING
+
 # rm(list = ls())
 
-# setwd("/Users/Aditi_2/Desktop/UvA/SR-SEM_job/stage1hyperpars/sim_code")
+# setwd("/Users/Aditi_2/Desktop/UvA/SR-SEM_job/stage1hyperpars/results_and_postprocessing")
 # getwd()
