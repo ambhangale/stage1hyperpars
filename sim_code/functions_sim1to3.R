@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 10 April 2024
+## Last updated: 11 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1977,7 +1977,7 @@ makeRunsim <- function(nSamps, n, G, analType, precision = NULL, sim) {
 # multivariate social relations model
 # Simulations 1 to 3
 
-# runsim_',analType, ifelse(!is.null(precision), paste0("_", precision), ""), '_', sim,'
+# runsim_',analType, ifelse(!is.null(precision), paste0("_", precision), ""), '_n', n, '_G', G, '_', sim,'
 
 source("functions_sim1to3.R")
 
@@ -2016,7 +2016,7 @@ if (analType == "FIML1S") {
    # close cluster\n
    stopCluster(cl)
    
-   saveRDS(ogResult, paste0("results_', analType,'_',sim, '_",Sys.Date(),".rds"))
+   saveRDS(ogResult, paste0("results_', analType,'_n', n, '_G', G, '_',sim, '_",Sys.Date(),".rds"))
          ')
 } else {
   paste0('s1Result <- foreach(row_num = 1:nrow(',analType,'_grid),
@@ -2036,15 +2036,16 @@ if (analType == "FIML1S") {
          # close cluster\n
           stopCluster(cl)
          
-         saveRDS(s1Result, paste0("results_', analType, '_', ifelse(!is.null(precision), 
-                                                                    paste0(precision, "_"), ""),
-         sim,'-", Sys.Date(),".rds"))
+         saveRDS(s1Result, paste0("results_', analType, ifelse(!is.null(precision), 
+                                                                    paste0("_", precision), ""), 
+         '_n', n, '_G', G, '_', sim,'_", Sys.Date(),".rds"))
          
          ')
 }
 )
  
-  cat(runsimfile, file = paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim, ".R"))
+  cat(runsimfile, file = paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
+                                "_n", n, "_G", G, "_", sim, ".R"))
   invisible(NULL)
 }
 
@@ -2088,12 +2089,12 @@ if (analType == "FIML1S") {
 
 # function 13: create shell files----
 
-makeShSnellius <- function(analType, precision = NULL, sim, wallTime) {
+makeShSnellius <- function(n, G, analType, precision = NULL, sim, wallTime) {
   shell <- paste0('#!/bin/bash
 
-#SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'
-#SBATCH -e ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SERR
-#SBATCH -o ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SOUT
+#SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'
+#SBATCH -e ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SERR
+#SBATCH -o ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SOUT
 #SBATCH -N 1
 #SBATCH -n 128
 #SBATCH -t ', wallTime,'
@@ -2109,29 +2110,29 @@ export MKL_NUM_THREADS=1
 export R_LIBS=$HOME/rpackages:$R_LIBS
 
 cp $HOME/SR-SEM/stage1hyperpars/functions_sim1to3.R "$TMPDIR"
-cp $HOME/SR-SEM/stage1hyperpars/', paste0("runsim_", analType, ifelse(!is.null(precision), 
-                                                                      paste0("_", precision), ""), "_", sim, ".R"),' "$TMPDIR"
+cp $HOME/SR-SEM/stage1hyperpars/', paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
+                                          "_n", n, "_G", G, "_", sim, ".R"),' "$TMPDIR"
 
-Rscript --vanilla ', paste0("runsim_", analType, ifelse(!is.null(precision), 
-                                                        paste0("_", precision), ""), "_", sim, ".R"),'
+Rscript --vanilla ', paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
+                            "_n", n, "_G", G, "_", sim, ".R"),'
 
 cp "$TMPDIR"/*.rds $HOME/SR-SEM/stage1hyperpars/' 
 
 )
-  cat(shell, file = paste0("shell_", analType, ifelse(!is.null(precision), 
-                                                      paste0("_", precision), ""), "_", sim, ".sh"))
+  cat(shell, file = paste0("shell_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
+                           "_n", n, "_G", G, "_", sim, ".sh"))
   invisible(NULL)
 }
 
 #check
-# makeShSnellius(analType = "default", sim = "sim1", wallTime = "4-23:59:59")
-# makeShSnellius(analType = "prophetic", precision = 0.05, sim = "sim1", wallTime = "4-23:59:59")
-# makeShSnellius(analType = "prophetic", precision = 0.1, sim = "sim1", wallTime = "4-23:59:59")
-# makeShSnellius(analType = "prophetic", precision = 0.2, sim = "sim1", wallTime = "4-23:59:59")
-# makeShSnellius(analType = "FIML1S", sim = "sim1", wallTime = "4-23:59:59")
-# makeShSnellius(analType = "thoughtful", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
-# makeShSnellius(analType = "ANOVA", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
-# makeShSnellius(analType = "FIML", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "default", sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "prophetic", precision = 0.05, sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "prophetic", precision = 0.1, sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "prophetic", precision = 0.2, sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "FIML1S", sim = "sim1", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "thoughtful", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "ANOVA", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "FIML", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
 
 #----
 
