@@ -44,7 +44,7 @@ simCondsB$wallTime <- c("12:00:00", "14:00:00", "1-12:00:00", "2-12:00:00", # de
                 "05:00:00", "14:00:00", "18:00:00", "22:00:00" # FIML1S_G25
                 )
 
-  
+# generate files  
 for(i in 1:nrow(simCondsA)) {
   makeRunsim(nSamps = simCondsA[i, ]$nSamps, n = simCondsA[i, ]$n, 
              G = simCondsA[i, ]$G, analType = simCondsA[i, ]$analType, 
