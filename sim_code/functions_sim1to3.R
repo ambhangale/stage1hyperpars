@@ -1995,7 +1995,7 @@ analType,'_grid$row_num <- 1:nrow(', analType,'_grid)
 # prepare parallel processing\n
 library(doSNOW)
 
-nClus <- 32
+nClus <- 124
 cl <- makeCluster(nClus)
 registerDoSNOW(cl)
 
@@ -2095,7 +2095,7 @@ makeShSnellius <- function(analType, precision = NULL, sim, wallTime) {
 #SBATCH -e ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SERR
 #SBATCH -o ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_", sim),'.SOUT
 #SBATCH -N 1
-#SBATCH -n 32
+#SBATCH -n 128
 #SBATCH -t ', wallTime,'
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=aditibhangale@gmail.com
