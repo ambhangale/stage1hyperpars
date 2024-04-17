@@ -1583,9 +1583,15 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   
   
   # add analType columns to the final dataframes
-  Sigma$analType <- paste0("MCMC-", priorType, "-", ifelse(!missing(precision), precision, "SE"))
-  R$analType <- paste0("MCMC-", priorType, "-", ifelse(!missing(precision), precision, "SE"))
-  SD$analType <- paste0("MCMC-", priorType, "-", ifelse(!missing(precision), precision, "SE"))
+  Sigma$analType <- paste0("MCMC-", priorType, "-", 
+                           ifelse(!missing(precision), precision, "SE"),
+                           ifelse(isTRUE(smallvar), "-smallvar", ""))
+  R$analType <- paste0("MCMC-", priorType, "-", 
+                       ifelse(!missing(precision), precision, "SE"),
+                       ifelse(isTRUE(smallvar), "-smallvar", ""))
+  SD$analType <- paste0("MCMC-", priorType, "-", 
+                        ifelse(!missing(precision), precision, "SE"),
+                        ifelse(isTRUE(smallvar), "-smallvar", ""))
   
   # add prior1 and prior2 columns to R and SD dataframes
   R$prior1 <- NA; R$prior2 <- NA; SD$prior1 <- NA; SD$prior2 <- NA
@@ -1682,7 +1688,8 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   out <- list(cov = Sigma, cor = R, SD = SD, 
               mPSRF = c(MCSampID = MCSampID, condition = paste0(n, "-", G), 
                         analType = paste0("MCMC-", priorType, "-", 
-                                          ifelse(!missing(precision), precision, "SE")),
+                                          ifelse(!missing(precision), precision, "SE"),
+                                          ifelse(isTRUE(smallvar), "-smallvar", "")),
                         mPSRF = mPSRF))
   
   # end: compiling final results ----
@@ -1859,7 +1866,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   covResult$iter <- satfit$res_opt$iter # save number of MLE iterations
   covResult$RunTime <- difftime(t1, t0, units = "mins")
   covResult$condition <- paste0(n, "-", G)
-  covResult$analType <- "1S-FIML"
+  covResult$analType <- paste0("1S-FIML", ifelse(isTRUE(smallvar), "-smallvar", ""))
   
   ## cor results
   p.names <- paste0("f", rep(1:3, times = 2), "@", rep(c("A", "P"), each = 3))
@@ -1962,7 +1969,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   SDResult$RunTime <- difftime(t1, t0, units = "mins")
   popVals_SD <- popVals_all$pop.SD
   SDResult <- merge(SDResult, popVals_SD, by = "par_names", sort = FALSE)
-  SDResult$analType <- "1S-FIML"
+  SDResult$analType <- paste0("1S-FIML", ifelse(isTRUE(smallvar), "-smallvar", ""))
   
   corResult <- rbind(p.cor, d.cor)
   corResult <- corResult[, c("par_names", "level", "Estimate", "SE", "2.5 %", "97.5 %")]
@@ -1972,7 +1979,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   corResult$RunTime <- difftime(t1, t0, units = "mins")
   popVals_cor <- popVals_all$pop.cor
   corResult <- merge(corResult, popVals_cor, by = "par_names", sort = FALSE)
-  corResult$analType <- "1S-FIML"
+  corResult$analType <- paste0("1S-FIML", ifelse(isTRUE(smallvar), "-smallvar", ""))
   
   # add redundant columns (those in s1sat) and reorder columns to make postporcessing easier
   covResult$Ecov <- NA; covResult$Ecov.MCE <- NA; covResult$Ecov.SE <- NA
