@@ -23,6 +23,9 @@
 # FUNCTIONS FOR SIMULATIONS 1-3 ----
 #####################################
 
+# smallvar = TRUE fixes the alter (partner) variance of the third round-robin 
+# variable to 0.01 so that the alter SD is 0.1
+
 # function 0: generate level-specific (co)variance matrices----
 
 getSigma <- function(return_mats = TRUE, smallvar = FALSE){
@@ -1685,8 +1688,10 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   # end: compiling final results ----
   
   if (savefile) saveRDS(out, 
-                        file = paste0("ID", MCSampID, ".nG", G, ".n", n, "-", 
-                                      priorType, "-", ifelse(!missing(precision), precision, "SE"), ".rds"))
+                        file = paste0("ID", MCSampID, ".nG", G, ".n", n, "_", 
+                                      priorType, 
+                                      ifelse(!missing(precision), paste0("_", precision), "_SE"),
+                                      ifelse(isTRUE(smallvar), "_smallvar", ""), ".rds"))
   
   return(out)
 
@@ -1698,19 +1703,36 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
-#       iter = 100)
-# s1sat(MCSampID = 1, n = 6, G = 10, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       iter = 100, smallvar = FALSE)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3,
-#       precision = 0.1, iter = 100)
+#       precision = 0.1, iter = 100, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "prophetic",
-#       precision = 0.1, iter = 100)
+#       precision = 0.1, iter = 100, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "ANOVA",
-#       precision = 0.1, iter = 100)
+#       precision = 0.1, iter = 100, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
-#       precision = 0.1, multiMLE = F, iter = 100)
+#       precision = 0.1, multiMLE = F, iter = 100, smallvar = FALSE)
+
+## test `smallvar` condition
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
+#       iter = 50, smallvar = TRUE) 
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3,
+#       precision = 0.1, iter = 100, smallvar = TRUE)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "prophetic",
+#       precision = 0.1, iter = 100, smallvar = TRUE)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "ANOVA",
+#       precision = 0.1, iter = 100, smallvar = TRUE)
+# s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
+#       precision = 0.1, multiMLE = F, iter = 100, smallvar = TRUE)
 
 #----
 
@@ -1989,7 +2011,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
                         file = paste0("ID", MCSampID, ".nG", G, ".n", n, 
                                       "-1SFIML.rds"))
   
-  return(out) #TODO
+  return(out)
 }
 
 # ogsat(1, 6, 10)
