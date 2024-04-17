@@ -2009,7 +2009,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   
   if (savefile) saveRDS(out, 
                         file = paste0("ID", MCSampID, ".nG", G, ".n", n, 
-                                      "-1SFIML.rds"))
+                                      "_1SFIML", ifelse(isTRUE(smallvar), "_smallvar", ""),".rds"))
   
   return(out)
 }
