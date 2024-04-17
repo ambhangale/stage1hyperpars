@@ -106,7 +106,7 @@ getSigma <- function(return_mats = TRUE, smallvar = FALSE){
   # dyad-level corr matrix
   R_d <- cov2cor(SIGMA_d)
   
-  if (smallvar == TRUE) {
+  if (smallvar) {
     SIGMA_c["f3@P", "f3@P"] <- 0.01
     
     SIGMA_c["f3@P", "f1@A"] <- SIGMA_c["f1@A", "f3@P"] <- 
@@ -678,7 +678,7 @@ ANOVA_priors <- function(data, rr.vars, IDout, IDin, IDgroup,
 # function 8: FIML-based priors----
 
 FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
-                        multi = FALSE, default_prior) {
+                        multiMLE = FALSE, default_prior) {
   
   rr.data <- data
   priors <- default_prior # default priors
@@ -686,10 +686,10 @@ FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
   library(srm)
   library(car)
   
-  #README SEs as prior precisions only implemented for `multi = FALSE`. not necessary 
-  # to implement for `multi = TRUE`, because we are not exploring that anymore. 
+  #README SEs as prior precisions only implemented for `multiMLE = FALSE`. not necessary 
+  # to implement for `multiMLE = TRUE`, because we are not exploring that anymore. 
   
-  if (multi) {
+  if (multiMLE) {
     
     ## case syntax
     rr_c <- paste0(rep(rr.vars, each = 2), c("@A", "@P"))
@@ -1118,7 +1118,7 @@ FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
 }
 
 # FIML_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-#              IDin = "Partner", IDgroup = "Group", precision = 0.1, multi = FALSE,
+#              IDin = "Partner", IDgroup = "Group", precision = 0.1, multiMLE = FALSE,
 #              default_prior = lavaan.srm::srm_priors(data = rr.data[c("V1", "V2", "V3")]))
 
 #----
@@ -1154,14 +1154,14 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
    
  } else if (priorType == "FIML") { # FIML-based priors (`srm`)
    srmPriors <- FIML_priors(data = data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
-                            IDgroup = IDgroup, precision = precision, multi = multiMLE,
+                            IDgroup = IDgroup, precision = precision, multiMLE = multiMLE,
                             default_prior = get("default_prior", envir = prior_env))
  }
  return(srmPriors)
 }
 
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "default")
-# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"),priorType = "prophetic",
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "prophetic",
 #            precision = 0.1)
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"),priorType = "prophetic",
 #            precision = 0.1, smallvar = T) # smallvar condition
@@ -1326,7 +1326,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     
     s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                               IDgroup = IDgroup, priorType = priorType, precision = precision,
-                              multi = multiMLE)
+                              multiMLE = multiMLE)
     s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
