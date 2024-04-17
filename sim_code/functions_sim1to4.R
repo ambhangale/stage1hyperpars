@@ -1184,17 +1184,14 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 
 s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"), 
                   IDout = "Actor", IDin = "Partner", IDgroup = "Group", priorType,
-                  targetCorr = 0.3, pop_corMat = list(popCorr_c = getSigma()$R_c,
-                                    popCorr_d = getSigma()$R_d),
-                  pop_SDvec = list(popSD_c = sqrt(diag(getSigma()$SIGMA_c)),
-                                   popSD_d = sqrt(diag(getSigma()$SIGMA_d))),
-                  precision = 0.1, multiMLE = FALSE, iter = 2000, savefile = FALSE) {
+                  targetCorr = 0.3, precision = 0.1, smallvar = FALSE, 
+                  multiMLE = FALSE, iter = 2000, savefile = FALSE) {
   library(lavaan.srm)
   library(coda) # for gelman.diag()
   library(rstan) # for As.mcmc.list()
   
   s1_env <- new.env()
-  s1_env$dat <- genGroups(MCSampID = MCSampID, n = n, G = G)
+  s1_env$dat <- genGroups(MCSampID = MCSampID, n = n, G = G, smallvar = smallvar)
   s1_env$MCMC_pars <- c("s_rr", "S_p", "r_d2", 
                         paste0("Rp[", combn(1:6, 2, paste0, 
                                             collapse = ","), "]")) # save non-redundant MCMC parameter labels
@@ -1265,7 +1262,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     rr.data <- get("dat", envir = s1_env)
     
     s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, priorType = priorType,
-                                   precision = precision)
+                                   precision = precision, smallvar = smallvar)
     s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                     IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                     iter = iter, priors = s1_priors, seed = 1512, verbose = F)
@@ -1571,7 +1568,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   rownames(R) <- NULL
   
   # merge all values with their population values
-  popVals <- getSigma(return_mats = FALSE)
+  popVals <- getSigma(return_mats = FALSE, smallvar = smallvar)
   Sigma <- merge(Sigma, popVals$pop.cov, by = "par_names") # (co)variances
   R <- merge(R, popVals$pop.cor, by = "par_names") # correlations
   SD <- merge(SD, popVals$pop.SD, by = "par_names") # standard deviations
@@ -1827,8 +1824,11 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   covVals$ogcov.low <- covVals$ogcov - 1.96*covVals$ogcov.SE
   covVals$ogcov.up <- covVals$ogcov + 1.96*covVals$ogcov.SE
   
+  # save population values
+  popVals_all <- getSigma(return_mats = FALSE, smallvar = smallvar)
+  
   # creating a final cov dataframe
-  popVals_cov <- getSigma(return_mats = FALSE, smallvar = smallvar)$pop.cov
+  popVals_cov <- popVals_all$pop.cov
   covResult <- merge(covVals, popVals_cov, by = "par_names", sort = FALSE)
   rownames(covResult) <- NULL
   
@@ -1938,7 +1938,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   SDResult$MCSampID <- MCSampID; SDResult$n <- n; SDResult$G <- G; SDResult$condition <- paste0(n, "-", G)
   SDResult$iter <- satfit$res_opt$iter
   SDResult$RunTime <- difftime(t1, t0, units = "mins")
-  popVals_SD <- getSigma(return_mats = FALSE, smallvar = smallvar)$pop.SD
+  popVals_SD <- popVals_all$pop.SD
   SDResult <- merge(SDResult, popVals_SD, by = "par_names", sort = FALSE)
   SDResult$analType <- "1S-FIML"
   
@@ -1948,7 +1948,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   corResult$MCSampID <- MCSampID; corResult$n <- n; corResult$G <- G; corResult$condition <- paste0(n, "-", G)
   corResult$iter <- satfit$res_opt$iter
   corResult$RunTime <- difftime(t1, t0, units = "mins")
-  popVals_cor <- getSigma(return_mats = FALSE, smallvar = smallvar)$pop.cor
+  popVals_cor <- popVals_all$pop.cor
   corResult <- merge(corResult, popVals_cor, by = "par_names", sort = FALSE)
   corResult$analType <- "1S-FIML"
   
