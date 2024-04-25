@@ -391,9 +391,62 @@ make_long <- function(...) {
   mPSRF_list <- lapply(1:length(long_list), function(pp) long_list[[pp]]$mPSRF_result)
   mPSRF_long <- do.call("rbind", mPSRF_list)
   
-  all_list <- all_list <- list(cov_result = cov_long, cor_result = cor_long, 
+  all_list <- list(cov_result = cov_long, cor_result = cor_long, 
                                  SD_result = SD_long, mPSRF_result = mPSRF_long)
-    
+  resTypes <- names(all_list)
+  for (i in resTypes) {
+    if (i == "cov_result") {
+      all_list[[i]]$par_names <- factor(all_list[[i]]$par_names, 
+                                        levels = c("f1@A~~f1@A", "f2@A~~f2@A", "f3@A~~f3@A", # ego var
+                                                   "f1@P~~f1@P", "f2@P~~f2@P", "f3@P~~f3@P", # alter var
+                                                   "f1@A~~f2@A", "f1@A~~f3@A", "f2@A~~f3@A", # e-e cov
+                                                   "f1@P~~f2@P", "f1@P~~f3@P", "f2@P~~f3@P", # a-a cov
+                                                   "f1@A~~f1@P", "f1@A~~f2@P", "f1@A~~f3@P", # e-a cov
+                                                   "f2@A~~f2@P", "f2@A~~f3@P", "f3@A~~f3@P",
+                                                   "f1@P~~f2@A", "f1@P~~f3@A", "f2@P~~f3@A", # a-e cov
+                                                   "f1@AP~~f1@AP", "f2@AP~~f2@AP", "f3@AP~~f3@AP", # rel var
+                                                   "f1@AP~~f1@PA", "f2@AP~~f2@PA", "f3@AP~~f3@PA", # dyadic cov
+                                                   "f1@AP~~f2@AP", "f1@AP~~f3@AP", "f2@AP~~f3@AP", # intra cov
+                                                   "f1@AP~~f2@PA", "f1@AP~~f3@PA", "f2@AP~~f3@PA" # inter cov
+                                        ))
+      all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
+                                        levels = c("6-10", "8-10", "10-10", "20-10", 
+                                                   "6-20", "8-20", "10-20", "20-20"))
+      all_list[[i]]$level <- factor(all_list[[i]]$level, levels = c("case", "dyad"),
+                                    labels = c("Case level", "Dyad level"))
+    } else if (i == "cor_result") {
+      all_list[[i]]$par_names <- factor(all_list[[i]]$par_names, 
+                                        levels = c("f1@A~~f2@A", "f1@A~~f3@A", "f2@A~~f3@A", # e-e cov
+                                                   "f1@P~~f2@P", "f1@P~~f3@P", "f2@P~~f3@P", # a-a cov
+                                                   "f1@A~~f1@P", "f1@A~~f2@P", "f1@A~~f3@P", # e-a cov
+                                                   "f2@A~~f2@P", "f2@A~~f3@P", "f3@A~~f3@P",
+                                                   "f1@P~~f2@A", "f1@P~~f3@A", "f2@P~~f3@A", # a-e cov
+                                                   "f1@AP~~f1@PA", "f2@AP~~f2@PA", "f3@AP~~f3@PA", # dyadic cov
+                                                   "f1@AP~~f2@AP", "f1@AP~~f3@AP", "f2@AP~~f3@AP", # intra cov
+                                                   "f1@AP~~f2@PA", "f1@AP~~f3@PA", "f2@AP~~f3@PA" # inter cov
+                                        ))
+      all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
+                                        levels = c("6-10", "8-10", "10-10", "20-10", 
+                                                   "6-20", "8-20", "10-20", "20-20"))
+      all_list[[i]]$level <- factor(all_list[[i]]$level, levels = c("case", "dyad"),
+                                    labels = c("Case level", "Dyad level"))
+    } else if (i == "SD_result") {
+      all_list[[i]]$par_names <- factor(all_list[[i]]$par_names, 
+                                        levels = c("f1@A~~f1@A", "f2@A~~f2@A", "f3@A~~f3@A", # ego var
+                                                   "f1@P~~f1@P", "f2@P~~f2@P", "f3@P~~f3@P", # alter var
+                                                   "f1@AP~~f1@AP", "f2@AP~~f2@AP", "f3@AP~~f3@AP" # rel var
+                                        ))
+      all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
+                                        levels = c("6-10", "8-10", "10-10", "20-10", 
+                                                   "6-20", "8-20", "10-20", "20-20"))
+      all_list[[i]]$level <- factor(all_list[[i]]$level, levels = c("case", "dyad"),
+                                    labels = c("Case level", "Dyad level"))
+    } else if (i == "mPSRF_result") {
+      all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
+                                        levels = c("6-10", "8-10", "10-10", "20-10", 
+                                                   "6-20", "8-20", "10-20", "20-20"))
+    }
+  }
   all_list
   }
 
