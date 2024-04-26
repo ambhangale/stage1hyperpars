@@ -1995,30 +1995,32 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   covResult$Ecov <- NA; covResult$Ecov.MCE <- NA; covResult$Ecov.SE <- NA
   covResult$Ecov.low <- NA; covResult$Ecov.up <- NA; covResult$Ecov.n_eff <- NA
   covResult$Ecov.Rhat <- NA; covResult$Mcov <- NA; covResult$Mcov.low <- NA;
-  covResult$Mcov.up <- NA
+  covResult$Mcov.up <- NA; covResult$mPSRF <- NA
   corResult$Ecor <- NA; corResult$Ecor.MCE <- NA; corResult$Ecor.SE <- NA
   corResult$Ecor.low <- NA; corResult$Ecor.up <- NA; corResult$Ecor.n_eff <- NA
   corResult$Ecor.Rhat <- NA; corResult$Mcor <- NA; corResult$Mcor.low <- NA;
-  corResult$Mcor.up <- NA; corResult$prior1 <- NA; corResult$prior2 <- NA
+  corResult$Mcor.up <- NA; corResult$prior1 <- NA; corResult$prior2 <- NA;
+  corResult$mPSRF <- NA
   SDResult$Esd <- NA; SDResult$Esd.MCE <- NA; SDResult$Esd.SE <- NA
   SDResult$Esd.low <- NA; SDResult$Esd.up <- NA; SDResult$Esd.n_eff <- NA
   SDResult$Esd.Rhat <- NA; SDResult$Msd <- NA; SDResult$Msd.low <- NA;
-  SDResult$Msd.up <- NA; SDResult$prior1 <- NA; SDResult$prior2 <- NA
+  SDResult$Msd.up <- NA; SDResult$prior1 <- NA; SDResult$prior2 <- NA;
+  SDResult$mPSRF <- NA
   
   covResult <- covResult[, c("par_names", "MCSampID", "n", "G", "condition", "level",
                              "analType", "iter", "RunTime", "pop.cov", "Ecov", "Ecov.MCE",
                              "Ecov.SE", "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
-                             "Mcov", "Mcov.low", "Mcov.up", "ogcov", "ogcov.SE",
+                             "Mcov", "Mcov.low", "Mcov.up", "mPSRF", "ogcov", "ogcov.SE",
                              "ogcov.low", "ogcov.up")]
   corResult <- corResult[, c("par_names", "MCSampID", "n", "G", "condition", "level",
                              "analType", "iter", "RunTime", "pop.cor", "Ecor", "Ecor.MCE",
                              "Ecor.SE", "Ecor.low", "Ecor.up", "Ecor.n_eff", "Ecor.Rhat", 
-                             "Mcor", "Mcor.low", "Mcor.up", "prior1", "prior2",
+                             "Mcor", "Mcor.low", "Mcor.up", "prior1", "prior2", "mPSRF",
                              "ogcor", "ogcor.SE", "ogcor.low", "ogcor.up")]
   SDResult <- SDResult[, c("par_names", "MCSampID", "n", "G", "condition", "level",
                            "analType", "iter", "RunTime", "pop.SD", "Esd", "Esd.MCE",
                            "Esd.SE", "Esd.low", "Esd.up", "Esd.n_eff", "Esd.Rhat", 
-                           "Msd", "Msd.low", "Msd.up", "prior1", "prior2",
+                           "Msd", "Msd.low", "Msd.up", "prior1", "prior2", "mPSRF",
                            "ogsd", "ogsd.SE", "ogsd.low", "ogsd.up")]
   
   
