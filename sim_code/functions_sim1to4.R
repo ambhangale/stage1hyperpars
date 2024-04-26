@@ -1696,7 +1696,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   
   # combine covariances and correlations + SDs as list
   out <- list(cov = Sigma, cor = R, SD = SD, 
-              mPSRF = c(MCSampID = MCSampID, condition = paste0(n, "-", G), 
+              mPSRF = c(MCSampID = as.numeric(MCSampID), condition = paste0(n, "-", G), 
                         analType = paste0("MCMC-", priorType, "-", 
                                           ifelse(!missing(precision), precision, "SE"),
                                           ifelse(isTRUE(smallvar), "-smallvar", "")),

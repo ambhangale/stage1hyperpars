@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 25 April 2024
+## Last updated: 26 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -13,6 +13,8 @@
 
 # setwd("/Users/Aditi_2/Desktop/UvA/SR-SEM_job/stage1hyperpars/results_and_postprocessing")
 # getwd()
+
+#TODO add code for mPSRF column in $covresult, $corresult, and $SDresult
 
 # function 1: extract and load results----
 extract_results <- function(analType = NULL, precision = NULL, sim) {
@@ -380,7 +382,7 @@ make_long_single <- function(dat, estType) {
                                         ))
       all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
                                         levels = c("6-10", "8-10", "10-10", "20-10", 
-                                                   "6-20", "8-20", "10-20", "20-20"))
+                                                   "6-25", "8-25", "10-25", "20-25"))
       all_list[[i]]$level <- factor(all_list[[i]]$level, levels = c("case", "dyad"),
                                     labels = c("Case level", "Dyad level"))
     } else if (i == "cor_result") {
@@ -396,7 +398,7 @@ make_long_single <- function(dat, estType) {
                                         ))
       all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
                                         levels = c("6-10", "8-10", "10-10", "20-10", 
-                                                   "6-20", "8-20", "10-20", "20-20"))
+                                                   "6-25", "8-25", "10-25", "20-25"))
       all_list[[i]]$level <- factor(all_list[[i]]$level, levels = c("case", "dyad"),
                                     labels = c("Case level", "Dyad level"))
     } else if (i == "SD_result") {
@@ -407,13 +409,13 @@ make_long_single <- function(dat, estType) {
                                         ))
       all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
                                         levels = c("6-10", "8-10", "10-10", "20-10", 
-                                                   "6-20", "8-20", "10-20", "20-20"))
+                                                   "6-25", "8-25", "10-25", "20-25"))
       all_list[[i]]$level <- factor(all_list[[i]]$level, levels = c("case", "dyad"),
                                     labels = c("Case level", "Dyad level"))
     } else if (i == "mPSRF_result") {
       all_list[[i]]$condition <- factor(all_list[[i]]$condition, 
                                         levels = c("6-10", "8-10", "10-10", "20-10", 
-                                                   "6-20", "8-20", "10-20", "20-20"))
+                                                   "6-25", "8-25", "10-25", "20-25"))
     }
   }
   

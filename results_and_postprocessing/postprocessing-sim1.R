@@ -1065,4 +1065,46 @@ ggplot(covMedAE[covMedAE$level == "Dyad level",],
 
 sim1mPSRF[which(sim1mPSRF$mPSRF > 1.05),] -> foo
 
+# > unique(sim1mPSRF$analType)
+# [1] Diffuse priors Pr-0.05 priors Pr-0.1 priors  Pr-0.2 priors 
+# Levels: Diffuse priors Pr-0.05 priors Pr-0.1 priors Pr-0.2 priors FIML
 
+dim(foo[foo$condition == "6-10" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "6-10" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "6-10" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "6-10" & foo$analType == "Pr-0.2 priors", ])
+
+dim(foo[foo$condition == "6-25" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "6-25" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "6-25" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "6-25" & foo$analType == "Pr-0.2 priors", ])
+
+dim(foo[foo$condition == "8-10" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "8-10" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "8-10" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "8-10" & foo$analType == "Pr-0.2 priors", ])
+
+dim(foo[foo$condition == "8-25" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "8-25" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "8-25" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "8-25" & foo$analType == "Pr-0.2 priors", ])
+
+dim(foo[foo$condition == "10-10" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "10-10" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "10-10" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "10-10" & foo$analType == "Pr-0.2 priors", ])
+
+dim(foo[foo$condition == "10-25" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "10-25" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "10-25" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "10-25" & foo$analType == "Pr-0.2 priors", ])
+
+dim(foo[foo$condition == "20-10" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "20-10" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "20-10" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "20-10" & foo$analType == "Pr-0.2 priors", ])
+
+dim(foo[foo$condition == "20-25" & foo$analType == "Diffuse priors", ])
+dim(foo[foo$condition == "20-25" & foo$analType == "Pr-0.05 priors", ])
+dim(foo[foo$condition == "20-25" & foo$analType == "Pr-0.1 priors", ])
+dim(foo[foo$condition == "20-25" & foo$analType == "Pr-0.2 priors", ])
