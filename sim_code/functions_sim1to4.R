@@ -1719,7 +1719,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 ### data from the new environment each time
 
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-#       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
+#       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = NA,
 #       iter = 100, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3,
