@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 24 April 2024
+## Last updated: 25 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -362,39 +362,8 @@ make_long_single <- function(dat, estType) {
     all_list <- list(cov_result = cov_result, cor_result = cor_result, 
                      SD_result = SD_result, mPSRF_result = dat$mPSRF_result)
   }
-  all_list
-}
-
-# estType = c("EAP", "MAP", "allMCMC", "FIML1S", "all")
-
-# make_long_single(dat = foo, estType = "EAP") -> long1
-# make_long_single(dat = foo, estType = "MAP") -> long2
-# make_long_single(dat = foo, estType = "allMCMC") -> long3
-# make_long_single(dat = foo, estType = "FIML1S") -> long4
-# make_long_single(dat = foo, estType = "all") -> long5
-
-#----
-
-# function 3: convert results into long format (multiple samples at once)----
-
-make_long <- function(...) {
-  wide_list <- list(...)
-  estTypes <- names(wide_list)
-  long_list <- lapply(1:length(estTypes), function (i) make_long_single(wide_list[[i]], 
-                                                                        estType = estTypes[i]))
-  cov_long_list <- lapply(1:length(long_list), function(ll) long_list[[ll]]$cov_result)
-  cov_long <- do.call("rbind", cov_long_list)
-  cor_long_list <- lapply(1:length(long_list), function(mm) long_list[[mm]]$cor_result)
-  cor_long <- do.call("rbind", cor_long_list)
-  SD_long_list <- lapply(1:length(long_list), function(nn) long_list[[nn]]$SD_result)
-  SD_long <- do.call("rbind", SD_long_list)
-  mPSRF_list <- lapply(1:length(long_list), function(pp) long_list[[pp]]$mPSRF_result)
-  mPSRF_long <- do.call("rbind", mPSRF_list)
   
-  all_list <- list(cov_result = cov_long, cor_result = cor_long, 
-                                 SD_result = SD_long, mPSRF_result = mPSRF_long)
-  resTypes <- names(all_list)
-  for (i in resTypes) {
+  for (i in resType) {
     if (i == "cov_result") {
       all_list[[i]]$par_names <- factor(all_list[[i]]$par_names, 
                                         levels = c("f1@A~~f1@A", "f2@A~~f2@A", "f3@A~~f3@A", # ego var
@@ -447,6 +416,38 @@ make_long <- function(...) {
                                                    "6-20", "8-20", "10-20", "20-20"))
     }
   }
+  
+  all_list
+}
+
+# estType = c("EAP", "MAP", "allMCMC", "FIML1S", "all")
+
+# make_long_single(dat = foo, estType = "EAP") -> long1
+# make_long_single(dat = foo, estType = "MAP") -> long2
+# make_long_single(dat = foo, estType = "allMCMC") -> long3
+# make_long_single(dat = foo, estType = "FIML1S") -> long4
+# make_long_single(dat = foo, estType = "all") -> long5
+
+#----
+
+# function 3: convert results into long format (multiple samples at once)----
+
+make_long <- function(...) {
+  wide_list <- list(...)
+  estTypes <- names(wide_list)
+  long_list <- lapply(1:length(estTypes), function (i) make_long_single(wide_list[[i]], 
+                                                                        estType = estTypes[i]))
+  cov_long_list <- lapply(1:length(long_list), function(ll) long_list[[ll]]$cov_result)
+  cov_long <- do.call("rbind", cov_long_list)
+  cor_long_list <- lapply(1:length(long_list), function(mm) long_list[[mm]]$cor_result)
+  cor_long <- do.call("rbind", cor_long_list)
+  SD_long_list <- lapply(1:length(long_list), function(nn) long_list[[nn]]$SD_result)
+  SD_long <- do.call("rbind", SD_long_list)
+  mPSRF_list <- lapply(1:length(long_list), function(pp) long_list[[pp]]$mPSRF_result)
+  mPSRF_long <- do.call("rbind", mPSRF_list)
+  
+  all_list <- list(cov_result = cov_long, cor_result = cor_long, 
+                                 SD_result = SD_long, mPSRF_result = mPSRF_long)
   all_list
   }
 

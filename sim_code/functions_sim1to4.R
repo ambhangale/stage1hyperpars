@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 17 April 2024
+## Last updated: 26 April 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1218,15 +1218,16 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     s1long <- s1long[-nrow(s1long), ]
     
     if (mPSRF > 1.05) {
+      iter <- iter*2
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
+                      iter = iter, priors = s1_priors, seed = 1512, verbose = F)
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
       mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1249,15 +1250,16 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     s1long <- s1long[-nrow(s1long), ]
     
     if (mPSRF > 1.05) {
+      iter <- iter*2
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
+                      iter = iter, priors = s1_priors, seed = 1512, verbose = F)
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
       mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1279,15 +1281,16 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     s1long <- s1long[-nrow(s1long), ]
     
     if (mPSRF > 1.05) {
+      iter <- iter*2
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
+                      iter = iter, priors = s1_priors, seed = 1512, verbose = F)
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
       mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1309,15 +1312,16 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     s1long <- s1long[-nrow(s1long), ]
     
     if (mPSRF > 1.05) {
+      iter <- iter*2
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
+                      iter = iter, priors = s1_priors, seed = 1512, verbose = F)
       
       ## compute mPSRF
       mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
       mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
       
-      s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
       s1long <- s1long[-nrow(s1long), ]
     }
@@ -1340,15 +1344,16 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     s1long <- s1long[-nrow(s1long), ]
     
     if (mPSRF > 1.05) {
+      iter <- iter*2
       s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                       IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter*2, priors = s1_priors, seed = 1512, verbose = F)
+                      iter = iter, priors = s1_priors, seed = 1512, verbose = F)
       
       ## compute mPSRF
     mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
     mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
     
-    s1long <- cbind(iter = iter*2, data.frame(summary(s1ests, as.stanfit = TRUE,
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     }
@@ -1666,19 +1671,24 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   R$RunTime <- difftime(t1, t0, units = "mins")
   SD$RunTime <- difftime(t1, t0, units = "mins")
   
+  # add mPSRF column
+  Sigma$mPSRF <- mPSRF
+  R$mPSRF <- mPSRF
+  SD$mPSRF <- mPSRF
+  
   # reorder columns and add redundant columns (those in og) to make postprocessing easier
   Sigma <- Sigma[, c("par_names", "MCSampID", "n", "G", "condition", "level",
                      "analType", "iter", "RunTime", "pop.cov", "Ecov", "Ecov.MCE",
                      "Ecov.SE", "Ecov.low", "Ecov.up", "Ecov.n_eff", "Ecov.Rhat", 
-                     "Mcov", "Mcov.low", "Mcov.up")]
+                     "Mcov", "Mcov.low", "Mcov.up", "mPSRF")]
   R <- R[, c("par_names", "MCSampID", "n", "G", "condition", "level",
                      "analType", "iter", "RunTime", "pop.cor", "Ecor", "Ecor.MCE",
                      "Ecor.SE", "Ecor.low", "Ecor.up", "Ecor.n_eff", "Ecor.Rhat", 
-                     "Mcor", "Mcor.low", "Mcor.up", "prior1", "prior2")]
+                     "Mcor", "Mcor.low", "Mcor.up", "prior1", "prior2", "mPSRF")]
   SD <- SD[, c("par_names", "MCSampID", "n", "G", "condition", "level",
              "analType", "iter", "RunTime", "pop.SD", "Esd", "Esd.MCE",
              "Esd.SE", "Esd.low", "Esd.up", "Esd.n_eff", "Esd.Rhat", 
-             "Msd", "Msd.low", "Msd.up", "prior1", "prior2")]
+             "Msd", "Msd.low", "Msd.up", "prior1", "prior2", "mPSRF")]
   
   Sigma$ogcov <- NA; Sigma$ogcov.SE <- NA; Sigma$ogcov.low <- NA; Sigma$ogcov.up <- NA
   R$ogcor <- NA; R$ogcor.SE <- NA; R$ogcor.low <- NA; R$ogcor.up <- NA
@@ -1690,7 +1700,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                         analType = paste0("MCMC-", priorType, "-", 
                                           ifelse(!missing(precision), precision, "SE"),
                                           ifelse(isTRUE(smallvar), "-smallvar", "")),
-                        mPSRF = mPSRF))
+                        iter = iter, mPSRF = mPSRF))
   
   # end: compiling final results ----
   

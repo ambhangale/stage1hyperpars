@@ -4,7 +4,7 @@
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
 
-# Data processing
+# Postprocessing (outcome variables) and data visualisation for simulation 1
 
 # rm(list = ls())
 
@@ -14,401 +14,1055 @@
 # setwd("/Users/Aditi_2/Desktop/UvA/SR-SEM_job/stage1hyperpars/results_and_postprocessing")
 # getwd()
 
-# function 1: extract and load results----
-extract_results <- function(analType = NULL, precision = NULL, sim) {
-  # files <- grep("results", grep(sim, dir(), value = T), value = T)
-  files <- if (!missing(analType) && !missing(precision)) {
-    grep("results", grep(analType, grep(precision, grep(sim, dir(), value = T), 
-                                        value = T), value = T), value = T)
-  } else if (missing(precision) && !missing(analType)) {
-    grep("results", grep(analType, grep(sim, dir(), value = T), value = T), value = T)
-  } else {
-    grep("results", grep(sim, dir(), value = T), value = T)
-  }
-  
-  cov_list <- list()
-  cor_list <- list()
-  SD_list <- list()
-  mPSRF_list <- list()
-  all_list <- list()
-  
-  for (i in 1:length(files)) {
-    file_results <- readRDS(files[i])
-  
-    # file_cov_list <- lapply(1:length(file_results), function(MCSampID) file_results[[MCSampID]]$cov)
-    file_cov_result <- do.call("rbind", lapply(1:length(file_results), 
-                                               function(MCSampID) file_results[[MCSampID]]$cov))
-    # file_cor_list <- lapply(1:length(file_results), function(MCSampID) file_results[[MCSampID]]$cor)
-    file_cor_result <- do.call("rbind", lapply(1:length(file_results), 
-                                               function(MCSampID) file_results[[MCSampID]]$cor))
-    # file_SD_list <- lapply(1:length(file_results), function(MCSampID) file_results[[MCSampID]]$SD)
-    file_SD_result <- do.call("rbind", lapply(1:length(file_results), 
-                                              function(MCSampID) file_results[[MCSampID]]$SD))
-    
-    if (isFALSE(grepl("FIML1S", files[i]))) {
-      # file_mPSRF_list <- lapply(1:length(file_results), function(MCSampID) file_results[[MCSampID]]$mPSRF)
-      file_mPSRF_result <- data.frame(do.call("rbind", lapply(1:length(file_results), 
-                                                              function(MCSampID) file_results[[MCSampID]]$mPSRF)))
-      
-    } else {
-      file_mPSRF_result <- NULL
-    }
-    cov_list[[i]] <- file_cov_result
-    cor_list[[i]] <- file_cor_result
-    SD_list[[i]] <- file_SD_result
-    if (!is.null(file_mPSRF_result)) mPSRF_list[[i]] <- file_mPSRF_result
-  }
-  
-  cov_result <- do.call("rbind", cov_list)
-  cor_result <- do.call("rbind", cor_list)
-  SD_result <- do.call("rbind", SD_list)
-  mPSRF_result <- do.call("rbind", mPSRF_list)
-  all_list <- list(cov_result = cov_result, cor_result = cor_result, 
-                   SD_result = SD_result, mPSRF_result = mPSRF_result)
-  
+sim1result <- readRDS("sim1result.rds")
+for (i in names(sim1result)) {
+  sim1result[[i]]$analType <- factor(sim1result[[i]]$analType,
+                                     levels = c("MCMC-default-NA", "MCMC-prophetic-0.05",
+                                                "MCMC-prophetic-0.1", "MCMC-prophetic-0.2",
+                                                "1S-FIML"),
+                                     labels = c("Diffuse priors", "Pr-0.05 priors",
+                                                "Pr-0.1 priors", "Pr-0.2 priors",
+                                                "FIML"))
 }
 
-# foo <- extract_results(sim = "sim1")
+## we only want to compare EAP and ogFIML in this simulation
+sim1cov <- sim1result$cov_result[sim1result$cov_result$estType %in% c("EAP", "ogFIML"),]
+sim1cor <- sim1result$cor_result[sim1result$cor_result$estType %in% c("EAP", "ogFIML"),]
+sim1SD <- sim1result$SD_result[sim1result$cor_result$estType %in% c("EAP", "ogFIML"),]
+sim1mPSRF <- sim1result$mPSRF_result
+
+library(ggplot2)
+
+# case level labels, colours, and shapes----
+case_pars <- c(# ego var
+  "f1@A~~f1@A" = "darkorange1", "f2@A~~f2@A" = "darkorange3", "f3@A~~f3@A" = "darkorange4",
+  # alter var
+  "f1@P~~f1@P" = "olivedrab1", "f2@P~~f2@P" = "olivedrab3", "f3@P~~f3@P" = "olivedrab4",
+  # e-e cov
+  "f1@A~~f2@A" = "steelblue1", "f1@A~~f3@A" = "steelblue3", "f2@A~~f3@A" = "steelblue4",
+  # a-a cov
+  "f1@P~~f2@P" = "hotpink1", "f1@P~~f3@P" = "hotpink3", "f2@P~~f3@P" = "hotpink4",
+  #e-a cov
+  "f1@A~~f1@P" = "gold1", "f1@A~~f2@P" = "gold3", "f1@A~~f3@P" = "gold4", 
+  "f2@A~~f2@P" = "coral1", "f2@A~~f3@P" = "coral3", "f3@A~~f3@P" = "coral4", 
+  #a-e cov
+  "f1@P~~f2@A" = "slateblue1", "f1@P~~f3@A" = "slateblue3", "f2@P~~f3@A" = "slateblue4")
+
+case_labels <- c(# ego var
+  expression(sigma[E[1]]^2), expression(sigma[E[2]]^2), expression(sigma[E[3]]^2),
+  # alter var
+  expression(sigma[A[1]]^2), expression(sigma[A[2]]^2), expression(sigma[A[3]]^2),
+  # e-e cov
+  expression(sigma[E[1]][E[2]]), expression(sigma[E[1]][E[3]]), expression(sigma[E[2]][E[3]]),
+  # a-a cov
+  expression(sigma[A[1]][A[2]]), expression(sigma[A[1]][A[3]]), expression(sigma[A[2]][A[3]]),
+  #e-a cov
+  expression(sigma[E[1]][A[1]]), expression(sigma[E[1]][A[2]]), expression(sigma[E[1]][A[3]]), 
+  expression(sigma[E[2]][A[2]]), expression(sigma[E[2]][A[3]]), expression(sigma[E[3]][A[3]]), 
+  expression(sigma[A[1]][E[2]]), expression(sigma[A[1]][E[3]]), expression(sigma[A[2]][E[3]]))
+
+case_shape <- c(# ego var
+  "f1@A~~f1@A" = 0, "f2@A~~f2@A" = 0, "f3@A~~f3@A" = 0,
+  # alter var
+  "f1@P~~f1@P" = 1, "f2@P~~f2@P" = 1, "f3@P~~f3@P" = 1,
+  # e-e cov
+  "f1@A~~f2@A" = 8, "f1@A~~f3@A" = 8, "f2@A~~f3@A" = 8,
+  # a-a cov
+  "f1@P~~f2@P" = 12, "f1@P~~f3@P" = 12, "f2@P~~f3@P" = 12,
+  #e-a cov
+  "f1@A~~f1@P" = 13, "f1@A~~f2@P" = 13, "f1@A~~f3@P" = 13, 
+  "f2@A~~f2@P" = 13, "f2@A~~f3@P" = 13, "f3@A~~f3@P" = 13, 
+  "f1@P~~f2@A" = 6, "f1@P~~f3@A" = 6, "f2@P~~f3@A" = 6)
+#----
+
+# dyad level labels, colours, and shapes----
+dyad_pars <- c(# rel var
+  "f1@AP~~f1@AP" = "sienna1", "f2@AP~~f2@AP" = "sienna3", "f3@AP~~f3@AP" = "sienna4",
+  # dyadic co
+  "f1@AP~~f1@PA" = "deeppink1", "f2@AP~~f2@PA" = "deeppink3", "f3@AP~~f3@PA" = "deeppink4",
+  # intra cov
+  "f1@AP~~f2@AP" = "darkolivegreen1", "f1@AP~~f3@AP" = "darkolivegreen3", "f2@AP~~f3@AP" = "darkolivegreen4",
+  # inter cov
+  "f1@AP~~f2@PA" = "royalblue1", "f1@AP~~f3@PA" = "royalblue3", "f2@AP~~f3@PA" = "royalblue4")
+
+dyad_labels <- c(# rel var
+  expression(sigma[R[1]]^2), expression(sigma[R[2]]^2), expression(sigma[R[3]]^2),
+  # dyadic cov
+  expression(sigma[R[1]]^dyadic), expression(sigma[R[2]]^dyadic), expression(sigma[R[3]]^dyadic),
+  #intra cov
+  expression(sigma[R[1]][R[2]]^intra), expression(sigma[R[1]][R[3]]^intra), expression(sigma[R[2]][R[3]]^intra),
+  # inter cov
+  expression(sigma[R[1]][R[2]]^inter), expression(sigma[R[1]][R[3]]^inter), expression(sigma[R[2]][R[3]]^inter))
+
+dyad_shape <- c(# rel var
+  "f1@AP~~f1@AP" = 0, "f2@AP~~f2@AP" = 0, "f3@AP~~f3@AP" = 0,
+  # dyadic co
+  "f1@AP~~f1@PA" = 1, "f2@AP~~f2@PA" = 1, "f3@AP~~f3@PA" = 1,
+  # intra cov
+  "f1@AP~~f2@AP" = 2, "f1@AP~~f3@AP" = 2, "f2@AP~~f3@AP" = 2,
+  # inter cov
+  "f1@AP~~f2@PA" = 5, "f1@AP~~f3@PA" = 5, "f2@AP~~f3@PA" = 5)
+#----
+
+#########################################
+# POSTPROCSSING FOR CORRELATION ESTIMATES
+#########################################
+
+# correlation bias----
+sim1cor$cor.bias <- sim1cor$cor.est - sim1cor$pop.cor
+sim1cor$cor.RB <- sim1cor$cor.bias / sim1cor$pop.cor
+
+corBias <- aggregate(cbind(pop.cor, cor.bias, cor.RB) ~ par_names + condition + analType + level, 
+                     data = sim1cor, FUN = mean)
+
+ggplot(corBias[corBias$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.bias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Bias for case-level correlation parameters")
+
+ggplot(corBias[corBias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.bias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Bias for dyad-level correlation parameters")
 
 #----
 
-# function 2: convert results into long format (single sample)----
-make_long_single <- function(dat, estType) {
-  resType <- c("cov_result", "cor_result", "SD_result")
-  common_cols <- c("par_names", "MCSampID", "n", "G", "condition", "level", "analType", "iter",
-                   "RunTime")
-  newcolNames_cov <- c(common_cols, "pop.cov", "cov.est", "cov.SE", "cov.low", "cov.up", 
-                       "cov.MCMC_neff", "cov.MCMC_Rhat", "estType")
-  newcolNames_cor <- c(common_cols, "pop.cor", "cor.est", "cor.SE", "cor.low", "cor.up", 
-                       "prior1", "prior2", "cor.MCMC_neff", "cor.MCMC_Rhat", "estType")
-  newcolNames_SD <- c(common_cols, "pop.SD", "SD.est", "SD.SE", "SD.low", "SD.up", 
-                      "prior1", "prior2", "SD.MCMC_neff", "SD.MCMC_Rhat", "estType")
-  
-  all_list <- list()
-  
-  if (estType == "EAP") {
-    for (i in resType) {
-      if (i == "cov_result") {
-        cov_EAP <- dat[[i]][, c(common_cols, "pop.cov", "Ecov", "Ecov.SE", "Ecov.low", 
-                                "Ecov.up", "Ecov.n_eff", "Ecov.Rhat")]
-        if ("1S-FIML" %in% unique(cov_EAP$analType)) {
-          cov_EAP <- cov_EAP[!cov_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cov_EAP$estType <- "EAP" # add estType
-        colnames(cov_EAP) <- newcolNames_cov
-        
-      } else if (i == "cor_result") {
-        cor_EAP <- dat[[i]][, c(common_cols, "pop.cor", "Ecor", "Ecor.SE", "Ecor.low",
-                                "Ecor.up", "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        if ("1S-FIML" %in% unique(cor_EAP$analType)) {
-          cor_EAP <- cor_EAP[!cor_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cor_EAP$estType <- "EAP" # add estType
-        colnames(cor_EAP) <- newcolNames_cor
-        
-      } else if (i == "SD_result") {
-        sd_EAP <- dat[[i]][, c(common_cols, "pop.SD", "Esd", "Esd.SE", "Esd.low", "Esd.up", 
-                               "prior1", "prior2", "Esd.n_eff", "Esd.Rhat")]
-        if ("1S-FIML" %in% unique(sd_EAP$analType)) { 
-          sd_EAP <- sd_EAP[!sd_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        sd_EAP$estType <- "EAP" # add estType
-        colnames(sd_EAP) <- newcolNames_SD
-        
-      }
-    }
-    all_list <- list(cov_result = cov_EAP, cor_result = cor_EAP, 
-                     SD_result = sd_EAP, mPSRF_result = dat$mPSRF_result)
-    
-  } else if (estType == "MAP") {
-    for (i in resType) {
-      if (i == "cov_result") {
-        cov_MAP <- dat[[i]][, c(common_cols, "pop.cov", "Mcov", "Mcov.low", "Mcov.up", 
-                                "Ecov.n_eff", "Ecov.Rhat")]
-        cov_MAP$Mcov.SE <- NA # add dummy Mcov.SE column, then rearrange columns
-        cov_MAP <- cov_MAP[, c(common_cols, "pop.cov", "Mcov", "Mcov.SE", 
-                               "Mcov.low", "Mcov.up", "Ecov.n_eff", "Ecov.Rhat")]
-        if ("1S-FIML" %in% unique(cov_MAP$analType)) {
-          cov_MAP <- cov_MAP[!cov_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cov_MAP$estType <- "MAP" # add estType
-        colnames(cov_MAP) <- newcolNames_cov
-        
-      } else if (i == "cor_result") {
-        cor_MAP <- dat[[i]][, c(common_cols, "pop.cor", "Mcor", "Mcor.low", "Mcor.up", 
-                                "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        cor_MAP$Mcor.SE <- NA # add dummy Mcor.SE column
-        cor_MAP <- cor_MAP[, c(common_cols, "pop.cor", "Mcor", "Mcor.SE", "Mcor.low", "Mcor.up", 
-                               "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        if ("1S-FIML" %in% unique(cor_MAP$analType)) {
-          cor_MAP <- cor_MAP[!cor_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cor_MAP$estType <- "MAP" # add estType
-        colnames(cor_MAP) <- newcolNames_cor
-        
-      } else if (i == "SD_result") {
-        sd_MAP <- dat[[i]][, c(common_cols, "pop.SD", "Msd", "Msd.low", "Msd.up", "prior1", 
-                               "prior2", "Esd.n_eff", "Esd.Rhat")]
-        sd_MAP$Msd.SE <- NA # add dummy Msd.SE column
-        sd_MAP <- sd_MAP[, c(common_cols, "pop.SD", "Msd", "Msd.SE", "Msd.low", "Msd.up", 
-                             "prior1", "prior2", "Esd.n_eff", "Esd.Rhat")]
-        if ("1S-FIML" %in% unique(sd_MAP$analType)) {
-          sd_MAP <- sd_MAP[!sd_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        sd_MAP$estType <- "MAP" # add estType
-        colnames(sd_MAP) <- newcolNames_SD
-      } 
-    }
-    all_list <- list(cov_result = cov_MAP, cor_result = cor_MAP, 
-                     SD_result = sd_MAP, mPSRF_result = dat$mPSRF_result)
-    
-  } else if (estType == "allMCMC") {
-    for (i in resType) {
-      if (i == "cov_result") {
-        cov_EAP <- dat[[i]][, c(common_cols, "pop.cov", "Ecov", "Ecov.SE", "Ecov.low", 
-                                "Ecov.up", "Ecov.n_eff", "Ecov.Rhat")]
-        if ("1S-FIML" %in% unique(cov_EAP$analType)) {
-          cov_EAP <- cov_EAP[!cov_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cov_EAP$estType <- "EAP" # add estType
-        colnames(cov_EAP) <- newcolNames_cov
-        
-        cov_MAP <- dat[[i]][, c(common_cols, "pop.cov", "Mcov", "Mcov.low", "Mcov.up", 
-                                "Ecov.n_eff", "Ecov.Rhat")]
-        cov_MAP$Mcov.SE <- NA # add dummy Mcov.SE column, then rearrange columns
-        cov_MAP <- cov_MAP[, c(common_cols, "pop.cov", "Mcov", "Mcov.SE", 
-                               "Mcov.low", "Mcov.up", "Ecov.n_eff", "Ecov.Rhat")]
-        if ("1S-FIML" %in% unique(cov_MAP$analType)) {
-          cov_MAP <- cov_MAP[!cov_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cov_MAP$estType <- "MAP" # add estType
-        colnames(cov_MAP) <- newcolNames_cov
-        
-        cov_result <- rbind(cov_EAP, cov_MAP)
-        
-      } else if (i == "cor_result") {
-        cor_EAP <- dat[[i]][, c(common_cols, "pop.cor", "Ecor", "Ecor.SE", "Ecor.low", "Ecor.up", 
-                                "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        if ("1S-FIML" %in% unique(cor_EAP$analType)) {
-          cor_EAP <- cor_EAP[!cor_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cor_EAP$estType <- "EAP" # add estType
-        colnames(cor_EAP) <- newcolNames_cor
-        
-        cor_MAP <- dat[[i]][, c(common_cols, "pop.cor", "Mcor", "Mcor.low", "Mcor.up", 
-                                "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        cor_MAP$Mcor.SE <- NA # add dummy Mcor.SE column
-        cor_MAP <- cor_MAP[, c(common_cols, "pop.cor", "Mcor", "Mcor.SE", "Mcor.low", "Mcor.up", 
-                               "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        if ("1S-FIML" %in% unique(cor_MAP$analType)) {
-          cor_MAP <- cor_MAP[!cor_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cor_MAP$estType <- "MAP" # add estType
-        colnames(cor_MAP) <- newcolNames_cor
-        
-        cor_result <- rbind(cor_EAP, cor_MAP)
-        
-      } else if (i == "SD_result") {
-        sd_EAP <- dat[[i]][, c(common_cols, "pop.SD", "Esd", "Esd.SE", "Esd.low", "Esd.up", 
-                               "prior1", "prior2", "Esd.n_eff", "Esd.Rhat")]
-        if ("1S-FIML" %in% unique(sd_EAP$analType)) { 
-          sd_EAP <- sd_EAP[!sd_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        sd_EAP$estType <- "EAP" # add estType
-        colnames(sd_EAP) <- newcolNames_SD
-        
-        sd_MAP <- dat[[i]][, c(common_cols, "pop.SD", "Msd", "Msd.low", "Msd.up", "prior1", 
-                               "prior2", "Esd.n_eff", "Esd.Rhat")]
-        sd_MAP$Msd.SE <- NA # add dummy Msd.SE column
-        sd_MAP <- sd_MAP[, c(common_cols, "pop.SD", "Msd", "Msd.SE", "Msd.low", "Msd.up", 
-                             "prior1", "prior2", "Esd.n_eff", "Esd.Rhat")]
-        if ("1S-FIML" %in% unique(sd_MAP$analType)) {
-          sd_MAP <- sd_MAP[!sd_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        sd_MAP$estType <- "MAP" # add estType
-        colnames(sd_MAP) <- newcolNames_SD
-        
-        SD_result <- rbind(sd_EAP, sd_MAP)
-      }
-    }
-    all_list <- list(cov_result = cov_result, cor_result = cor_result, 
-                     SD_result = SD_result, mPSRF_result = dat$mPSRF_result)
-    
-  } else if (estType == "FIML1S") {
-    for (i in resType) {
-      if (i == "cov_result") {
-        cov_ogest <- dat[[i]][, c(common_cols, "pop.cov", "ogcov", "ogcov.SE", 
-                                  "ogcov.low", "ogcov.up")]
-        cov_ogest <- cov_ogest[cov_ogest$analType == "1S-FIML", ] # remove redundant rows
-        cov_ogest$cov.MCMC_neff <- NA; cov_ogest$cov.MCMC_Rhat <- NA
-        cov_ogest$estType <- "ogFIML" # add estType
-        colnames(cov_ogest) <- newcolNames_cov
-        
-      } else if (i == "cor_result") {
-        cor_ogest <- dat[[i]][, c(common_cols, "pop.cor", "ogcor", "ogcor.SE", 
-                                  "ogcor.low", "ogcor.up")]
-        cor_ogest$prior1 <- NA; cor_ogest$prior2 <- NA 
-        cor_ogest$cor.MCMC_neff <- NA; cor_ogest$cor.MCMC_Rhat <- NA # create dummy prior columns
-        cor_ogest <- cor_ogest[cor_ogest$analType == "1S-FIML", ] # remove redundant rows
-        cor_ogest$estType <- "ogFIML" # add estType
-        colnames(cor_ogest) <- newcolNames_cor
-        
-      } else if (i == "SD_result") {
-        sd_ogest <- dat[[i]][, c(common_cols, "pop.SD", "ogsd", "ogsd.SE", 
-                                 "ogsd.low", "ogsd.up")]
-        sd_ogest$prior1 <- NA; sd_ogest$prior2 <- NA 
-        sd_ogest$SD.MCMC_neff <- NA; sd_ogest$SD.MCMC_Rhat <- NA # create dummy prior columns
-        sd_ogest <- sd_ogest[sd_ogest$analType == "1S-FIML", ] # remove redundant rows
-        sd_ogest$estType <- "ogFIML" # add estType
-        colnames(sd_ogest) <- newcolNames_SD
-      }
-    }
-    all_list <- list(cov_result = cov_ogest, cor_result = cor_ogest, 
-                     SD_result = sd_ogest, mPSRF_result = NULL)
-    
-  } else if (estType == "all") {
-    for (i in resType) {
-      if (i == "cov_result") {
-        cov_EAP <- dat[[i]][, c(common_cols, "pop.cov", "Ecov", "Ecov.SE", "Ecov.low", 
-                                "Ecov.up", "Ecov.n_eff", "Ecov.Rhat")]
-        if ("1S-FIML" %in% unique(cov_EAP$analType)) {
-          cov_EAP <- cov_EAP[!cov_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cov_EAP$estType <- "EAP" # add estType
-        colnames(cov_EAP) <- newcolNames_cov
-        
-        cov_MAP <- dat[[i]][, c(common_cols, "pop.cov", "Mcov", "Mcov.low", "Mcov.up", 
-                                "Ecov.n_eff", "Ecov.Rhat")]
-        cov_MAP$Mcov.SE <- NA # add dummy Mcov.SE column, then rearrange columns
-        cov_MAP <- cov_MAP[, c(common_cols, "pop.cov", "Mcov", "Mcov.SE", 
-                               "Mcov.low", "Mcov.up", "Ecov.n_eff", "Ecov.Rhat")]
-        if ("1S-FIML" %in% unique(cov_MAP$analType)) {
-          cov_MAP <- cov_MAP[!cov_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cov_MAP$estType <- "MAP" # add estType
-        colnames(cov_MAP) <- newcolNames_cov
-        
-        cov_ogest <- dat[[i]][, c(common_cols, "pop.cov", "ogcov", "ogcov.SE", 
-                                  "ogcov.low", "ogcov.up")]
-        cov_ogest <- cov_ogest[cov_ogest$analType == "1S-FIML", ] # remove redundant rows
-        cov_ogest$cov.MCMC_neff <- NA; cov_ogest$cov.MCMC_Rhat <- NA
-        cov_ogest$estType <- "ogFIML" # add estType
-        colnames(cov_ogest) <- newcolNames_cov
-        
-        cov_result <- rbind(cov_EAP, cov_MAP, cov_ogest)
-        
-      } else if (i == "cor_result") {
-        cor_EAP <- dat[[i]][, c(common_cols, "pop.cor", "Ecor", "Ecor.SE", "Ecor.low", "Ecor.up", 
-                                "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        if ("1S-FIML" %in% unique(cor_EAP$analType)) {
-          cor_EAP <- cor_EAP[!cor_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cor_EAP$estType <- "EAP" # add estType
-        colnames(cor_EAP) <- newcolNames_cor
-        
-        cor_MAP <- dat[[i]][, c(common_cols, "pop.cor", "Mcor", "Mcor.low", "Mcor.up", 
-                                "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        cor_MAP$Mcor.SE <- NA # add dummy Mcor.SE column
-        cor_MAP <- cor_MAP[, c(common_cols, "pop.cor", "Mcor", "Mcor.SE", "Mcor.low", "Mcor.up", 
-                               "prior1", "prior2", "Ecor.n_eff", "Ecor.Rhat")]
-        if ("1S-FIML" %in% unique(cor_MAP$analType)) {
-          cor_MAP <- cor_MAP[!cor_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        cor_MAP$estType <- "MAP" # add estType
-        colnames(cor_MAP) <- newcolNames_cor
-        
-        cor_ogest <- dat[[i]][, c(common_cols, "pop.cor", "ogcor", "ogcor.SE", 
-                                  "ogcor.low", "ogcor.up")]
-        cor_ogest$prior1 <- NA; cor_ogest$prior2 <- NA 
-        cor_ogest$cor.MCMC_neff <- NA; cor_ogest$cor.MCMC_Rhat <- NA # create dummy prior columns
-        cor_ogest <- cor_ogest[cor_ogest$analType == "1S-FIML", ] # remove redundant rows
-        cor_ogest$estType <- "ogFIML" # add estType
-        colnames(cor_ogest) <- newcolNames_cor
-        
-        cor_result <- rbind(cor_EAP, cor_MAP, cor_ogest)
-        
-      } else if (i == "SD_result") {
-        sd_EAP <- dat[[i]][, c(common_cols, "pop.SD", "Esd", "Esd.SE", "Esd.low", "Esd.up", 
-                               "prior1", "prior2", "Esd.n_eff", "Esd.Rhat")]
-        if ("1S-FIML" %in% unique(sd_EAP$analType)) { 
-          sd_EAP <- sd_EAP[!sd_EAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        sd_EAP$estType <- "EAP" # add estType
-        colnames(sd_EAP) <- newcolNames_SD
-        
-        sd_MAP <- dat[[i]][, c(common_cols, "pop.SD", "Msd", "Msd.low", "Msd.up", "prior1", 
-                               "prior2", "Esd.n_eff", "Esd.Rhat")]
-        sd_MAP$Msd.SE <- NA # add dummy Msd.SE column
-        sd_MAP <- sd_MAP[, c(common_cols, "pop.SD", "Msd", "Msd.SE", "Msd.low", "Msd.up", 
-                             "prior1", "prior2", "Esd.n_eff", "Esd.Rhat")]
-        if ("1S-FIML" %in% unique(sd_MAP$analType)) {
-          sd_MAP <- sd_MAP[!sd_MAP$analType == "1S-FIML", ] # remove redundant rows
-        }
-        sd_MAP$estType <- "MAP" # add estType
-        colnames(sd_MAP) <- newcolNames_SD
-        
-        sd_ogest <- dat[[i]][, c(common_cols, "pop.SD", "ogsd", "ogsd.SE", 
-                                 "ogsd.low", "ogsd.up")]
-        sd_ogest$prior1 <- NA; sd_ogest$prior2 <- NA 
-        sd_ogest$SD.MCMC_neff <- NA; sd_ogest$SD.MCMC_Rhat <- NA # create dummy prior columns
-        sd_ogest <- sd_ogest[sd_ogest$analType == "1S-FIML", ] # remove redundant rows
-        sd_ogest$estType <- "ogFIML" # add estType
-        colnames(sd_ogest) <- newcolNames_SD
-        
-        SD_result <- rbind(sd_EAP, sd_MAP, sd_ogest)
-        
-      }
-    }
-    all_list <- list(cov_result = cov_result, cor_result = cor_result, 
-                     SD_result = SD_result, mPSRF_result = dat$mPSRF_result)
-  }
-  all_list
-}
+# correlation robust bias----
+corRobBias <- aggregate(cor.est ~ par_names + pop.cor + condition + analType + level,
+                        data = sim1cor, FUN = median)
+corRobBias$cor.robbias <- corRobBias$cor.est - corRobBias$pop.cor
+corRobBias$cor.robRB <- corRobBias$cor.robbias / corRobBias$pop.cor
 
-# estType = c("EAP", "MAP", "allMCMC", "FIML1S", "all")
+ggplot(corRobBias[corRobBias$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.robbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Robust Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust bias for case-level correlation parameters")
 
-# make_long_single(dat = foo, estType = "EAP") -> long1
-# make_long_single(dat = foo, estType = "MAP") -> long2
-# make_long_single(dat = foo, estType = "allMCMC") -> long3
-# make_long_single(dat = foo, estType = "FIML1S") -> long4
-# make_long_single(dat = foo, estType = "all") -> long5
+ggplot(corRobBias[corRobBias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.robbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Robust Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust bias for dyad-level correlation parameters")
 
 #----
 
-# function 3: convert results into long format (multiple samples at once)----
+# correlation SE----
+corSE_est <- aggregate(cor.SE ~ par_names + pop.cor + condition + analType + level,
+                       data = sim1cor, FUN = mean)
+names(corSE_est)[names(corSE_est) == "cor.SE"] <- "cor.estSE"
 
-make_long <- function(...) {
-  wide_list <- list(...)
-  estTypes <- names(wide_list)
-  long_list <- lapply(1:length(estTypes), function (i) make_long_single(wide_list[[i]], 
-                                                                        estType = estTypes[i]))
-  cov_long_list <- lapply(1:length(long_list), function(ll) long_list[[ll]]$cov_result)
-  cov_long <- do.call("rbind", cov_long_list)
-  cor_long_list <- lapply(1:length(long_list), function(mm) long_list[[mm]]$cor_result)
-  cor_long <- do.call("rbind", cor_long_list)
-  SD_long_list <- lapply(1:length(long_list), function(nn) long_list[[nn]]$SD_result)
-  SD_long <- do.call("rbind", SD_long_list)
-  mPSRF_list <- lapply(1:length(long_list), function(pp) long_list[[pp]]$mPSRF_result)
-  mPSRF_long <- do.call("rbind", mPSRF_list)
-  
-  all_list <- all_list <- list(cov_result = cov_long, cor_result = cor_long, 
-                                 SD_result = SD_long, mPSRF_result = mPSRF_long)
-    
-  all_list
-  }
+ggplot(corSE_est[corSE_est$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.estSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Standard errors of case-level correlation parameters")
 
-# tryme <- make_long(allMCMC = extract_results(analType = "default", sim = "sim1"), 
-#           allMCMC = extract_results(analType = "prophetic", precision = 0.1, 
-#                                  sim = "sim1"), 
-#           allMCMC = extract_results(sim = "sim2"), 
-#           FIML1S = extract_results(analType = "FIML1S", sim = "sim1"))
+ggplot(corSE_est[corSE_est$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.estSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Standard errors of dyad-level correlation parameters")
 
 #----
 
-# sim1result <- make_long_single(extract_results(sim = "sim1"), estType = "all")
-# 
-# saveRDS(sim1result, file = "sim1result.rds")
+# correlation SE bias----
+corSE_obs <- aggregate(cor.est ~ par_names + pop.cor + condition + analType + level,
+                       data = sim1cor, FUN = sd)
+names(corSE_obs)[names(corSE_obs) == "cor.est"] <- "cor.obsSE"
+
+corSEbias <- merge(corSE_est, corSE_obs)
+corSEbias$cor.SEbias <- corSEbias$cor.estSE - corSEbias$cor.obsSE
+corSEbias$cor.SERB <- corSEbias$cor.SEbias / corSEbias$cor.obsSE
+
+ggplot(corSEbias[corSEbias$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.SEbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("SE bias for case-level correlation parameters")
+
+ggplot(corSEbias[corSEbias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.SEbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("SE bias for dyad-level correlation parameters")
+
+#----
+
+# correlation coverage rate----
+sim1cor$cor.coverage <- sim1cor$pop.cor >= sim1cor$cor.low & sim1cor$pop.cor <= sim1cor$cor.up
+
+corCR <- aggregate(cor.coverage ~ par_names + pop.cor + condition + analType + level,
+                   data = sim1cor, FUN = function(x) mean(x)*100)
+
+ggplot(corCR[corCR$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.coverage, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 95) + xlab("Method") + ylab("Coverage Rate") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Coverage rate for case-level correlation parameters")
+
+ggplot(corCR[corCR$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.coverage, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 95) + xlab("Method") + ylab("Coverage Rate") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Coverage rate for dyad-level correlation parameters")
 
 
+#----
+
+# correlation RMSE----
+sim1cor$cor.sqbias <- (sim1cor$cor.bias)^2
+
+corRMSE <- aggregate(cor.sqbias ~ par_names + pop.cor + condition + analType + level,
+                     data = sim1cor, FUN = function (x) sqrt(mean(x)))
+names(corRMSE)[names(corRMSE) == "cor.sqbias"] <- "cor.RMSE"
+
+#FIXME should I compute RMSE as bias^2 + SE^2
+
+ggplot(corRMSE[corRMSE$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.RMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("RMSE for case-level correlation parameters")
+
+ggplot(corRMSE[corRMSE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.RMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("RMSE for dyad-level correlation parameters")
+
+#----
+
+# correlation median absolute deviation (MAD)----
+corMAD <- aggregate(cor.est ~ par_names + pop.cor + condition + analType + level,
+                    data = sim1cor, FUN = function (x) 1.4826*median(abs(x - median(x))))
+names(corMAD)[names(corMAD) == "cor.est"] <- "cor.MAD"
+
+ggplot(corMAD[corMAD$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.MAD, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Deviation") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MAD for case-level correlation parameters")
+
+ggplot(corMAD[corMAD$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.MAD, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Deviation") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MAD for dyad-level correlation parameters")
+
+#----
+
+# correlation robust RMSE (robRMSE)----
+
+### RobRMSE = (RobBias^2 + MAD^2) 
+corMAD$cor.MADsq <- (corMAD$cor.MAD)^2
+corRobRMSE <- merge(corRobBias, corMAD)
+
+corRobRMSE$cor.RobRMSE <- (corRobRMSE$cor.robbias)^2 + corRobRMSE$cor.MADsq
+
+ggplot(corRobRMSE[corRobRMSE$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.RobRMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Robust RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust RMSE for case-level correlation parameters")
+
+ggplot(corRobRMSE[corRobRMSE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.RobRMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Robust RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust RMSE for dyad-level correlation parameters")
+
+#----
+
+# correlation median absolute error (MedAE)----
+
+### medAE = median(abs(est - pop))
+corMedAE <- aggregate(cor.bias ~ par_names + pop.cor + condition + analType + level,
+                      data = sim1cor, FUN = function(x) median(abs(x)))
+names(corMedAE)[names(corMedAE) == "cor.bias"] <- "cor.MedAE"
+
+ggplot(corMedAE[corMedAE$level == "Case level",], 
+       mapping = aes(x = analType, y = cor.MedAE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Error") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MedAE for case-level correlation parameters")
+
+ggplot(corMedAE[corMedAE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cor.MedAE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Error") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MedAE for dyad-level correlation parameters")
+
+#----
+
+################################
+# POSTPROCSSING FOR SD ESTIMATES
+################################
+
+# SD bias----
+sim1SD$SD.bias <- sim1SD$SD.est - sim1SD$pop.SD
+sim1SD$SD.RB <- sim1SD$SD.bias / sim1SD$pop.SD
+
+SDBias <- aggregate(cbind(pop.SD, SD.bias, SD.RB) ~ par_names + condition + analType + level, 
+                     data = sim1SD, FUN = mean)
+
+ggplot(SDBias[SDBias$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.bias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Bias for case-level SD parameters")
+
+ggplot(SDBias[SDBias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.bias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Bias for dyad-level SD parameters")
+
+#----
+
+# SD robust bias----
+SDRobBias <- aggregate(SD.est ~ par_names + pop.SD + condition + analType + level,
+                        data = sim1SD, FUN = median)
+SDRobBias$SD.robbias <- SDRobBias$SD.est - SDRobBias$pop.SD
+SDRobBias$SD.robRB <- SDRobBias$SD.robbias / SDRobBias$pop.SD
+
+ggplot(SDRobBias[SDRobBias$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.robbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Robust Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust bias for case-level SD parameters")
+
+ggplot(SDRobBias[SDRobBias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.robbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Robust Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust bias for dyad-level SD parameters")
+
+#----
+
+# SD SE----
+SDSE_est <- aggregate(SD.SE ~ par_names + pop.SD + condition + analType + level,
+                       data = sim1SD, FUN = mean)
+names(SDSE_est)[names(SDSE_est) == "SD.SE"] <- "SD.estSE"
+
+ggplot(SDSE_est[SDSE_est$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.estSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Standard errors of case-level SD parameters")
+
+ggplot(SDSE_est[SDSE_est$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.estSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Standard errors of dyad-level SD parameters")
+
+#----
+
+# SD SE bias----
+SDSE_obs <- aggregate(SD.est ~ par_names + pop.SD + condition + analType + level,
+                       data = sim1SD, FUN = sd)
+names(SDSE_obs)[names(SDSE_obs) == "SD.est"] <- "SD.obsSE"
+
+SDSEbias <- merge(SDSE_est, SDSE_obs)
+SDSEbias$SD.SEbias <- SDSEbias$SD.estSE - SDSEbias$SD.obsSE
+SDSEbias$SD.SERB <- SDSEbias$SD.SEbias / SDSEbias$SD.obsSE
+
+ggplot(SDSEbias[SDSEbias$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.SEbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("SE bias for case-level SD parameters")
+
+ggplot(SDSEbias[SDSEbias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.SEbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("SE bias for dyad-level SDn parameters")
+
+#----
+
+# SD coverage rate----
+sim1SD$SD.coverage <- sim1SD$pop.SD >= sim1SD$SD.low & sim1SD$pop.SD <= sim1SD$SD.up
+
+SDCR <- aggregate(SD.coverage ~ par_names + pop.SD + condition + analType + level,
+                   data = sim1SD, FUN = function(x) mean(x)*100)
+
+ggplot(SDCR[SDCR$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.coverage, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 95) + xlab("Method") + ylab("Coverage Rate") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Coverage rate for case-level SD parameters")
+
+ggplot(SDCR[SDCR$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.coverage, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 95) + xlab("Method") + ylab("Coverage Rate") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Coverage rate for dyad-level SD parameters")
+
+#----
+
+# SD RMSE----
+sim1SD$SD.sqbias <- (sim1SD$SD.bias)^2
+
+SDRMSE <- aggregate(SD.sqbias ~ par_names + pop.SD + condition + analType + level,
+                     data = sim1SD, FUN = function (x) sqrt(mean(x)))
+names(SDRMSE)[names(SDRMSE) == "SD.sqbias"] <- "SD.RMSE"
+
+#FIXME should I compute RMSE as bias^2 + SE^2
+
+ggplot(SDRMSE[SDRMSE$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.RMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("RMSE for case-level SD parameters")
+
+ggplot(SDRMSE[SDRMSE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.RMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("RMSE for dyad-level SD parameters")
+
+
+#----
+
+# SD median absolute deviation (MAD)----
+SDMAD <- aggregate(SD.est ~ par_names + pop.SD + condition + analType + level,
+                   data = sim1SD, FUN = function (x) 1.4826*median(abs(x - median(x))))
+names(SDMAD)[names(SDMAD) == "SD.est"] <- "SD.MAD"
+
+ggplot(SDMAD[SDMAD$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.MAD, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Deviation") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MAD for case-level SD parameters")
+
+ggplot(SDMAD[SDMAD$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.MAD, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Deviation") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MAD for dyad-level SD parameters")
+
+#----
+
+# SD robust RMSE (robRMSE)----
+
+### RobRMSE = (RobBias^2 + MAD^2) 
+SDMAD$SD.MADsq <- (SDMAD$SD.MAD)^2
+SDRobRMSE <- merge(SDRobBias, SDMAD)
+
+SDRobRMSE$SD.RobRMSE <- (SDRobRMSE$SD.robbias)^2 + SDRobRMSE$SD.MADsq
+
+ggplot(SDRobRMSE[SDRobRMSE$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.RobRMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Robust RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust RMSE for case-level SD parameters")
+
+ggplot(SDRobRMSE[SDRobRMSE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.RobRMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Robust RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust RMSE for dyad-level SD parameters")
+
+#----
+
+# SD median absolute error (MedAE)----
+
+### medAE = median(abs(est - pop))
+SDMedAE <- aggregate(SD.bias ~ par_names + pop.SD + condition + analType + level,
+                     data = sim1SD, FUN = function(x) median(abs(x)))
+names(SDMedAE)[names(SDMedAE) == "SD.bias"] <- "SD.MedAE"
+
+ggplot(SDMedAE[SDMedAE$level == "Case level",], 
+       mapping = aes(x = analType, y = SD.MedAE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Error") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MedAE for case-level SD parameters")
+
+ggplot(SDMedAE[SDMedAE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = SD.MedAE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Error") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MedAE for dyad-level SD parameters")
+
+#----
+
+########################################
+# POSTPROCSSING FOR COVARIANCE ESTIMATES
+########################################
+
+# covariance bias----
+sim1cov$cov.bias <- sim1cov$cov.est - sim1cov$pop.cov
+sim1cov$cov.RB <- sim1cov$cov.bias / sim1cov$pop.cov
+
+covBias <- aggregate(cbind(pop.cov, cov.bias, cov.RB) ~ par_names + condition + analType + level, 
+                     data = sim1cov, FUN = mean)
+
+ggplot(covBias[covBias$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.bias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Bias for case-level covariance parameters")
+
+ggplot(covBias[covBias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.bias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Bias for dyad-level covariance parameters")
+
+#----
+
+# covariance robust bias----
+covRobBias <- aggregate(cov.est ~ par_names + pop.cov + condition + analType + level,
+                        data = sim1cov, FUN = median)
+covRobBias$cov.robbias <- covRobBias$cov.est - covRobBias$pop.cov
+covRobBias$cov.robRB <- covRobBias$cov.robbias / covRobBias$pop.cov
+
+ggplot(covRobBias[covRobBias$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.robbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust bias for case-level covariance parameters")
+
+ggplot(covRobBias[covRobBias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.robbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Bias") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust bias for dyad-level covariance parameters")
+
+#----
+
+# covariance SE----
+covSE_est <- aggregate(cov.SE ~ par_names + pop.cov + condition + analType + level,
+                       data = sim1cov, FUN = mean)
+names(covSE_est)[names(covSE_est) == "cov.SE"] <- "cov.estSE"
+
+ggplot(covSE_est[covSE_est$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.estSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Standard errors of case-level covariance parameters")
+
+ggplot(covSE_est[covSE_est$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.estSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Standard errors of dyad-level covariance parameters")
+
+#----
+
+# covariance SE bias----
+covSE_obs <- aggregate(cov.est ~ par_names + pop.cov + condition + analType + level,
+                       data = sim1cov, FUN = sd)
+names(covSE_obs)[names(covSE_obs) == "cov.est"] <- "cov.obsSE"
+
+covSEbias <- merge(covSE_est, covSE_obs)
+covSEbias$cov.SEbias <- covSEbias$cov.estSE - covSEbias$cov.obsSE
+covSEbias$cov.SERB <- covSEbias$cov.SEbias / covSEbias$cov.obsSE
+
+ggplot(covSEbias[covSEbias$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.SEbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("SE bias for case-level covariance parameters")
+
+ggplot(covSEbias[covSEbias$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.SEbias, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 0) + xlab("Method") + ylab("Standard Errors") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("SE bias for dyad-level covariance parameters")
+
+#----
+
+# covariance coverage rate----
+sim1cov$cov.coverage <- sim1cov$pop.cov >= sim1cov$cov.low & sim1cov$pop.cov <= sim1cov$cov.up
+
+covCR <- aggregate(cov.coverage ~ par_names + pop.cov + condition + analType + level,
+                   data = sim1cov, FUN = function(x) mean(x)*100)
+
+ggplot(covCR[covCR$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.coverage, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 95) + xlab("Method") + ylab("Coverage Rate") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Coverage rate for case-level covariance parameters")
+
+ggplot(covCR[covCR$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.coverage, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  geom_hline(yintercept = 95) + xlab("Method") + ylab("Coverage Rate") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Coverage rate for dyad-level covariance parameters")
+
+#----
+
+# covariance RMSE----
+sim1cov$cov.sqbias <- (sim1cov$cov.bias)^2
+
+covRMSE <- aggregate(cov.sqbias ~ par_names + pop.cov + condition + analType + level,
+                     data = sim1cov, FUN = function (x) sqrt(mean(x)))
+names(covRMSE)[names(covRMSE) == "cov.sqbias"] <- "cov.RMSE"
+
+#FIXME should I compute RMSE as bias^2 + SE^2
+
+ggplot(covRMSE[covRMSE$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.RMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("RMSE for case-level covariance parameters")
+
+ggplot(covRMSE[covRMSE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.RMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("RMSE for dyad-level covariance parameters")
+
+#----
+
+# covariance median absolute deviation (MAD)----
+covMAD <- aggregate(cov.est ~ par_names + pop.cov + condition + analType + level,
+                     data = sim1cov, FUN = function (x) 1.4826*median(abs(x - median(x))))
+names(covMAD)[names(covMAD) == "cov.est"] <- "cov.MAD"
+
+ggplot(covMAD[covMAD$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.MAD, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Deviation") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MAD for case-level covariance parameters")
+
+ggplot(covMAD[covMAD$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.MAD, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Deviation") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MAD for dyad-level covariance parameters")
+
+#----
+
+# covariance robust RMSE (robRMSE)----
+
+### RobRMSE = (RobBias^2 + MAD^2) 
+covMAD$cov.MADsq <- (covMAD$cov.MAD)^2
+covRobRMSE <- merge(covRobBias, covMAD)
+
+covRobRMSE$cov.RobRMSE <- (covRobRMSE$cov.robbias)^2 + covRobRMSE$cov.MADsq
+
+ggplot(covRobRMSE[covRobRMSE$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.RobRMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Robust RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust RMSE for case-level covariance parameters")
+
+ggplot(covRobRMSE[covRobRMSE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.RobRMSE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Robust RMSE") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("Robust RMSE for dyad-level covariance parameters")
+
+#----
+
+# covariance median absolute error (MedAE)----
+
+### medAE = median(abs(est - pop))
+covMedAE <- aggregate(cov.bias ~ par_names + pop.cov + condition + analType + level,
+                       data = sim1cov, FUN = function(x) median(abs(x)))
+names(covMedAE)[names(covMedAE) == "cov.bias"] <- "cov.MedAE"
+
+ggplot(covMedAE[covMedAE$level == "Case level",], 
+       mapping = aes(x = analType, y = cov.MedAE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = case_pars, labels = case_labels) + 
+  scale_shape_manual(values = case_shape, labels = case_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Error") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MedAE for case-level covariance parameters")
+
+ggplot(covMedAE[covMedAE$level == "Dyad level",], 
+       mapping = aes(x = analType, y = cov.MedAE, group = par_names, color = par_names,
+                     shape = par_names)) + geom_point() + 
+  facet_wrap(~condition, nrow = 2, ncol = 4) + 
+  scale_color_manual(values = dyad_pars, labels = dyad_labels) + 
+  scale_shape_manual(values = dyad_shape, labels = dyad_labels) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  xlab("Method") + ylab("Median Absolute Error") +
+  labs(color = "Parameters", shape = "Parameters") + theme_grey(base_size = 14) + 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) + 
+  guides(color = guide_legend(ncol = 2), shape = guide_legend(ncol = 2)) +
+  ggtitle("MedAE for dyad-level covariance parameters")
+
+#----
+
+
+# foo[which(foo$cov.MCMC_neff < 100), ]
+
+sim1mPSRF[which(sim1mPSRF$mPSRF > 1.05),] -> foo
 
 
