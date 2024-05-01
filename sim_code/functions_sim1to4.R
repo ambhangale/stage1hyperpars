@@ -20,7 +20,7 @@
 # iter = 10
 
 #####################################
-# FUNCTIONS FOR SIMULATIONS 1-3 ----
+# FUNCTIONS FOR SIMULATIONS 1-4 ----
 #####################################
 
 # smallvar = TRUE fixes the alter (partner) variance of the third round-robin 
@@ -2052,7 +2052,7 @@ makeRunsim <- function(nSamps, n, G, analType, precision = NULL, sim) {
 
 # runsim_',analType, ifelse(!is.null(precision), paste0("_", precision), ""), '_n', n, '_G', G, '_', sim,'
 
-source("functions_sim1to3.R")
+source("functions_sim1to4.R")
 
 # specify conditions\n',
 
@@ -2182,7 +2182,7 @@ export MKL_NUM_THREADS=1
 
 export R_LIBS=$HOME/rpackages:$R_LIBS
 
-cp $HOME/SR-SEM/stage1hyperpars/functions_sim1to3.R "$TMPDIR"
+cp $HOME/SR-SEM/stage1hyperpars/functions_sim1to4.R "$TMPDIR"
 cp $HOME/SR-SEM/stage1hyperpars/', paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
                                           "_n", n, "_G", G, "_", sim, ".R"),' "$TMPDIR"
 
