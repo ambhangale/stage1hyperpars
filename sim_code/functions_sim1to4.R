@@ -2044,7 +2044,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
 
 # README: in this function, 1S-FIML = FIML1S when analType is single-stage FIML
 
-makeRunsim <- function(nSamps, n, G, analType, precision = NULL, sim) {
+makeRunsim <- function(nSamps, n, G, analType, precision = NULL, smallvar = FALSE, sim) {
   runsimfile <- paste0('## Aditi M. Bhangale
 ## Last updated:', Sys.Date(), 
 
@@ -2052,7 +2052,7 @@ makeRunsim <- function(nSamps, n, G, analType, precision = NULL, sim) {
 # multivariate social relations model
 # Simulations 1 to 3
 
-# runsim_',analType, ifelse(!is.null(precision), paste0("_", precision), ""), '_n', n, '_G', G, '_', sim,'
+# runsim_',analType, ifelse(!is.null(precision), paste0("_", precision), ""), '_n', n, '_G', G, ifelse(smallvar, "_smallvar", ""), '_',sim,'
 
 source("functions_sim1to4.R")
 
@@ -2062,7 +2062,7 @@ analType,'_grid <- expand.grid(MCSampID = 1:', nSamps, ', n = ', n, ', G = ', G,
                               ifelse(analType != "FIML1S", paste0('priorType = "', analType, '"'), 
                                      paste0('priorType = NA')), ',',
                               ifelse(!is.null(precision), paste0('precision = ', precision), 
-                                     paste0('precision = NA')),',
+                                     paste0('precision = NA')),', smallvar =', smallvar, ',
                               stringsAsFactors = F)\n',
 
 analType,'_grid$row_num <- 1:nrow(', analType,'_grid)
@@ -2082,7 +2082,8 @@ if (analType == "FIML1S") {
                                     
                                     out <- try(ogsat(MCSampID = ',analType,'_grid[row_num, ]$MCSampID, 
                                     n = ',analType,'_grid[row_num, ]$n, 
-                                                    G = ',analType,'_grid[row_num, ]$G), silent = T)
+                                                    G = ',analType,'_grid[row_num, ]$G,
+                                                    smallvar = ', smallvar,'), silent = T)
                                     if(inherits(out, "try-error")) out <- NULL
                                     
                                     return(out)
@@ -2091,7 +2092,7 @@ if (analType == "FIML1S") {
    # close cluster\n
    stopCluster(cl)
    
-   saveRDS(ogResult, paste0("results_', analType,'_n', n, '_G', G, '_',sim, '_",Sys.Date(),".rds"))
+   saveRDS(ogResult, paste0("results_', analType,'_n', n, '_G', G, ifelse(smallvar, "_smallvar", ""), '_',sim, '_",Sys.Date(),".rds"))
          ')
 } else {
   paste0('s1Result <- foreach(row_num = 1:nrow(',analType,'_grid),
@@ -2102,7 +2103,8 @@ if (analType == "FIML1S") {
                                     out <- try(s1sat(MCSampID = ',analType,'_grid[row_num, ]$MCSampID, 
                                                      n = ',analType,'_grid[row_num, ]$n, G = ',analType,'_grid[row_num, ]$G,
                                                      priorType = ',analType,'_grid[row_num, ]$priorType, 
-                                                     precision = ',analType,'_grid[row_num, ]$precision), silent = T)
+                                                     precision = ',analType,'_grid[row_num, ]$precision,
+                                                     smallvar = ', smallvar,'), silent = T)
                                     if(inherits(out, "try-error")) out <- NULL
                                     
                                     return(out)
@@ -2113,14 +2115,14 @@ if (analType == "FIML1S") {
          
          saveRDS(s1Result, paste0("results_', analType, ifelse(!is.null(precision), 
                                                                     paste0("_", precision), ""), 
-         '_n', n, '_G', G, '_', sim,'_", Sys.Date(),".rds"))
+         '_n', n, '_G', G, ifelse(smallvar, "_smallvar", ""), '_', sim,'_", Sys.Date(),".rds"))
          
          ')
 }
 )
  
   cat(runsimfile, file = paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
-                                "_n", n, "_G", G, "_", sim, ".R"))
+                                "_n", n, "_G", G, ifelse(smallvar, "_smallvar", ""), "_", sim, ".R"))
   invisible(NULL)
 }
 
@@ -2159,6 +2161,12 @@ if (analType == "FIML1S") {
 #            precision = 0.1, sim = "sim2") # worked, ran for 11.52 minutes
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "FIML",
 #            precision = 0.1, sim = "sim2") # worked, ran for 5.06 minutes
+
+#smallvar condition
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "prophetic",
+#            precision = 0.1, smallvar = T, sim = "sim4") # worked, ran 2.09 mins
+# makeRunsim(nSamps = 1, n = 6, G = 10, analType = "FIML1S", smallvar = T,
+#            sim = "sim4") # worked, ran 0.017 mins 
 
 #----
 
