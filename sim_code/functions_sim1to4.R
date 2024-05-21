@@ -2166,18 +2166,18 @@ if (analType == "FIML1S") {
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "prophetic",
 #            precision = 0.1, smallvar = T, sim = "sim4") # worked, ran 2.09 mins
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "FIML1S", smallvar = T,
-#            sim = "sim4") # worked, ran 0.017 mins 
+#            sim = "sim4") # worked, ran 0.017 mins
 
 #----
 
 # function 13: create shell files----
 
-makeShSnellius <- function(n, G, analType, precision = NULL, sim, wallTime) {
+makeShSnellius <- function(n, G, analType, precision = NULL, smallvar = FALSE, sim, wallTime) {
   shell <- paste0('#!/bin/bash
 
-#SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'
-#SBATCH -e .', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SERR
-#SBATCH -o .', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, "_", sim),'.SOUT
+#SBATCH -J ', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, ifelse(smallvar, "_smallvar", ""), "_", sim),'
+#SBATCH -e .', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, ifelse(smallvar, "_smallvar", ""), "_", sim),'.SERR
+#SBATCH -o .', paste0(analType, ifelse(!is.null(precision), paste0("_", precision), ""), "_n", n, "_G", G, ifelse(smallvar, "_smallvar", ""), "_", sim),'.SOUT
 #SBATCH -N 1
 #SBATCH -n 128
 #SBATCH -t ', wallTime,'
@@ -2194,16 +2194,16 @@ export R_LIBS=$HOME/rpackages:$R_LIBS
 
 cp $HOME/SR-SEM/stage1hyperpars/functions_sim1to4.R "$TMPDIR"
 cp $HOME/SR-SEM/stage1hyperpars/', paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
-                                          "_n", n, "_G", G, "_", sim, ".R"),' "$TMPDIR"
+                                          "_n", n, "_G", G, ifelse(smallvar, "_smallvar", ""), "_", sim, ".R"),' "$TMPDIR"
 
 Rscript --vanilla ', paste0("runsim_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
-                            "_n", n, "_G", G, "_", sim, ".R"),'
+                            "_n", n, "_G", G, ifelse(smallvar, "_smallvar", ""), "_", sim, ".R"),'
 
 cp "$TMPDIR"/*.rds $HOME/SR-SEM/stage1hyperpars/' 
 
 )
   cat(shell, file = paste0("shell_", analType, ifelse(!is.null(precision), paste0("_", precision), ""), 
-                           "_n", n, "_G", G, "_", sim, ".sh"))
+                           "_n", n, "_G", G, ifelse(smallvar, "_smallvar", ""), "_", sim, ".sh"))
   invisible(NULL)
 }
 
@@ -2216,6 +2216,11 @@ cp "$TMPDIR"/*.rds $HOME/SR-SEM/stage1hyperpars/'
 # makeShSnellius(n = 6, G = 10, analType = "thoughtful", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
 # makeShSnellius(n = 6, G = 10, analType = "ANOVA", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
 # makeShSnellius(n = 6, G = 10, analType = "FIML", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
+
+#smallvar condition
+# makeShSnellius(n = 6, G = 10, analType = "FIML", precision = 0.1, smallvar = T, sim = "sim4", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "FIML1S", smallvar = T, sim = "sim4", wallTime = "4-23:59:59")
+
 
 #----
 
