@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 26 April 2024
+## Last updated: 21 May 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -16,14 +16,15 @@
 # IDout <- "Actor"; IDin <- "Partner"; IDgroup <- "Group"
 # precision <- 0.1
 # targetCorr <- 0.3
-# priorType = "default"
-# iter = 10
+# priorType = "prophetic"
+# iter = 100
+# smallvar = T
 
 #####################################
 # FUNCTIONS FOR SIMULATIONS 1-4 ----
 #####################################
 
-# smallvar = TRUE fixes the alter (partner) variance of the third round-robin 
+# README: smallvar = TRUE fixes the alter (partner) variance of the third round-robin 
 # variable to 0.01 so that the alter SD is 0.1
 
 # function 0: generate level-specific (co)variance matrices----
@@ -112,6 +113,7 @@ getSigma <- function(return_mats = TRUE, smallvar = FALSE){
   if (smallvar) {
     SIGMA_c["f3@P", "f3@P"] <- 0.01
     
+    # adjust cov matrix values to ensure the cor matrix remains the same
     SIGMA_c["f3@P", "f1@A"] <- SIGMA_c["f1@A", "f3@P"] <- 
       R_c["f3@P", "f1@A"] * sqrt(SIGMA_c["f3@P", "f3@P"]) * sqrt(SIGMA_c["f1@A", "f1@A"])
     SIGMA_c["f3@P", "f2@A"] <- SIGMA_c["f2@A", "f3@P"] <- 
@@ -123,7 +125,7 @@ getSigma <- function(return_mats = TRUE, smallvar = FALSE){
     SIGMA_c["f3@P", "f2@P"] <- SIGMA_c["f2@P", "f3@P"] <- 
       R_c["f3@P", "f2@P"] * sqrt(SIGMA_c["f3@P", "f3@P"]) * sqrt(SIGMA_c["f2@P", "f2@P"])
     
-    R_c <- cov2cor(SIGMA_c)
+    # R_c <- cov2cor(SIGMA_c)
   }
   
   mat_list <- list(LAM_c=LAM_c, PHI_c=PHI_c, PSI_c=PSI_c,
@@ -1737,7 +1739,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 ## test `smallvar` condition
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "default", precision = 0.1,
-#       iter = 50, smallvar = TRUE) 
+#       iter = 50, smallvar = TRUE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "thoughtful", targetCorr = 0.3,
 #       precision = 0.1, iter = 100, smallvar = TRUE)
