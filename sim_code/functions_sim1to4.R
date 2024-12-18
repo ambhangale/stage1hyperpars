@@ -1131,7 +1131,7 @@ FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
 # function 9: FIML-based BMA priors----
 
 bma_FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
-                            multiMLE = FALSE, default_prior) { 
+                            multiMLE = FALSE) { 
   # this function is currently only implemented for n = 6, G = 10 data to create
   # 5 subsets of the data including 6 groups per subset. 
   
@@ -1141,14 +1141,30 @@ bma_FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NUL
   # `nSubsets` and `subLength` arguments (user provides number of subsets desired and number of
   # elements per subset. The function internally creates appropriate subsets)
   
+  rr.data <- data
+  
   subList <- list(subset1 = 1:6, 
                   subset2 = 3:8, 
                   subset3 = 5:10, 
                   subset4 = c(7:10, 1:2), 
-                  subset5 = c(9:10, 1:4)) # list of subset IDs
+                  subset5 = c(9:10, 1:4)) # list of subset IDs (5 subsets of 6 groups each)
   
+  subsetRR <- lapply(subList, function(x) rr.data[rr.data$Group %in% x,]) # list of subsetted data
   
+  subsetDefaults <- lapply(subsetRR, function(x) lavaan.srm::srm_priors(data = rr.data[rr.vars]))
+  
+  subsetPriors <- lapply(1:length(subsetRR), 
+                         function(x) FIML_priors(data = subsetRR[[x]], 
+                                                 rr.vars = rr.vars, IDout = IDout,
+                                                 IDin = IDin, IDgroup = IDgroup, precision = precision,       
+                                                 multiMLE = multiMLE,
+                                                 default_prior = lavaan.srm::srm_priors(subsetRR[[x]][rr.vars])))
+  
+  subsetPriors
 }
+
+# bma_FIML_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#              IDin = "Partner", IDgroup = "Group", precision = 0.1, multiMLE = FALSE)
 
 #----
 
