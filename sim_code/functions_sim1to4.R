@@ -1201,6 +1201,9 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
    srmPriors <- FIML_priors(data = data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                             IDgroup = IDgroup, precision = precision, multiMLE = multiMLE,
                             default_prior = get("default_prior", envir = prior_env))
+ } else if (priorType == "BMA-FIML") { # BMA of FIML-priors (`srm`)
+   srmPriors <- bma_FIML_priors(data = data, rr.vars = rr.vars, IDout = IDout, IDin = IDin, 
+                                IDgroup = IDgroup, precision = precision, multiMLE = multiMLE)
  }
  return(srmPriors)
 }
@@ -1217,7 +1220,9 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "FIML",
 #            IDout = "Actor", IDin = "Partner", IDgroup = "Group",
 #            multiMLE = FALSE, precision = 0.1)
-
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "BMA-FIML",
+#            IDout = "Actor", IDin = "Partner", IDgroup = "Group",
+#            multiMLE = FALSE, precision = 0.1)
 
 # README https://stackoverflow.com/questions/18338331/nested-function-environment-selection 
 # README https://digitheadslabnotebook.blogspot.com/2011/06/environments-in-r.html
