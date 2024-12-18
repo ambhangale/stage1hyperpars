@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 21 May 2024
+## Last updated: 18 December 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1128,7 +1128,31 @@ FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
 
 #----
 
-# function 9: set customised priors for MCMC stage----
+# function 9: FIML-based BMA priors----
+
+bma_FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NULL,
+                            multiMLE = FALSE, default_prior) { 
+  # this function is currently only implemented for n = 6, G = 10 data to create
+  # 5 subsets of the data including 6 groups per subset. 
+  
+  # FIXME: make function more generalisable
+  # `subList` argument (user provides list of subset IDs)
+  # OR 
+  # `nSubsets` and `subLength` arguments (user provides number of subsets desired and number of
+  # elements per subset. The function internally creates appropriate subsets)
+  
+  subList <- list(subset1 = 1:6, 
+                  subset2 = 3:8, 
+                  subset3 = 5:10, 
+                  subset4 = c(7:10, 1:2), 
+                  subset5 = c(9:10, 1:4)) # list of subset IDs
+  
+  
+}
+
+#----
+
+# function 10: set customised priors for MCMC stage----
 
 set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCorr,
                        precision, smallvar = FALSE, multiMLE = FALSE) {
@@ -1185,7 +1209,7 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 
 #----
 
-# function 10: stage 1 in `lavaan.srm`----
+# function 11: stage 1 in `lavaan.srm`----
 
 s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"), 
                   IDout = "Actor", IDin = "Partner", IDgroup = "Group", priorType,
@@ -1755,7 +1779,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 
 #----
 
-# function 11: fit saturated model in `srm`----
+# function 12: fit saturated model in `srm`----
 
 ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
   
@@ -2040,7 +2064,7 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
 
 #----
 
-# function 12: create runsim files----
+# function 13: create runsim files----
 
 # README: in this function, 1S-FIML = FIML1S when analType is single-stage FIML
 
@@ -2170,7 +2194,7 @@ if (analType == "FIML1S") {
 
 #----
 
-# function 13: create shell files----
+# function 14: create shell files----
 
 makeShSnellius <- function(n, G, analType, precision = NULL, smallvar = FALSE, sim, wallTime) {
   shell <- paste0('#!/bin/bash
@@ -2218,8 +2242,8 @@ cp "$TMPDIR"/*.rds $HOME/SR-SEM/stage1hyperpars/'
 # makeShSnellius(n = 6, G = 10, analType = "FIML", precision = 0.1, sim = "sim2", wallTime = "4-23:59:59")
 
 #smallvar condition
-# makeShSnellius(n = 6, G = 10, analType = "FIML", precision = 0.1, smallvar = T, sim = "sim4", wallTime = "4-23:59:59")
-# makeShSnellius(n = 6, G = 10, analType = "FIML1S", smallvar = T, sim = "sim4", wallTime = "4-23:59:59")
+# makeShSnellius(n = 6, G = 10, analType = "FIML", precision = 0.1, smallvar = T, sim = "sim4", wallTime = "5-00:00:00")
+# makeShSnellius(n = 6, G = 10, analType = "FIML1S", smallvar = T, sim = "sim4", wallTime = "5-00:00:00")
 
 
 #----
