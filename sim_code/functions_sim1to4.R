@@ -1404,7 +1404,41 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     }
+  } else if (priorType == "BMA-FIML") { #FIML, but BMA-ed
+    rr.data <- get("dat", envir = s1_env)
+    
+    s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                            IDgroup = IDgroup, priorType = priorType, precision = precision,
+                            multiMLE = multiMLE)
+    s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                    IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                    iter = iter, priors = s1_priors, seed = 1512, verbose = F)
+    
+    ## compute mPSRF
+    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
+    
+    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                    probs = c(0.025, 0.975))$summary))
+    s1long <- s1long[-nrow(s1long), ]
+    
+    if (mPSRF > 1.05) {
+      iter <- iter*2
+      s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
+                      IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                      iter = iter, priors = s1_priors, seed = 1512, verbose = F)
+      
+      ## compute mPSRF
+      mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
+      mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
+      
+      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
+                                                      probs = c(0.025, 0.975))$summary))
+      s1long <- s1long[-nrow(s1long), ]
+    }
   }
+  
+  
   t1 <- Sys.time()
 
   #begin: saving results----
@@ -1648,6 +1682,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   # add prior1 and prior2 columns to R and SD dataframes
   R$prior1 <- NA; R$prior2 <- NA; SD$prior1 <- NA; SD$prior2 <- NA
   
+  if (priorType %in% c("default", "thoughtful", "prophetic", "ANOVA", "FIML"))
   for(i in 1:length(rr.vars)) {
     ### outgoing SD prior parameters
     SD$prior1[SD$par_names == paste0("f", i, "@A~~f", i, "@A")] <- 
@@ -1779,7 +1814,10 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 #       precision = 0.1, iter = 100, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
-#       precision = 0.1, multiMLE = F, iter = 100, smallvar = FALSE)
+#       precision = 0.1, multiMLE = F, iter = 50, smallvar = FALSE)
+# s1sat(MCSampID = 1, n = 6, G = 10, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
+#       IDin = "Partner", IDgroup = "Group", priorType = "BMA-FIML",
+#       precision = 0.1, multiMLE = F, iter = 50, smallvar = FALSE)
 
 ## test `smallvar` condition
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
@@ -1796,7 +1834,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 #       precision = 0.1, iter = 100, smallvar = TRUE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
-#       precision = 0.1, multiMLE = F, iter = 100, smallvar = TRUE)
+#       precision = 0.1, multiMLE = F, iter = 50, smallvar = TRUE)
 
 #----
 
