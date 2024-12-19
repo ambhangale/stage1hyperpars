@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 18 December 2024
+## Last updated: 19 December 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1609,10 +1609,10 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1pM.SD$par_names <- paste0(s1pM.SD$Var1, "~~", s1pM.SD$Var1)
   s1pM.SD <- subset(s1pM.SD, select = c("par_names", "Freq"))
   names(s1pM.SD)[names(s1pM.SD) == "Freq"] <- "Msd"
-  s1pM.SD$Msd.low <- summary(s1ests, component = "case", 
-                             posterior.est = "mode")$case$sd$central["lower",] # lower hdi limit
-  s1pM.SD$Msd.up <- summary(s1ests, component = "case", 
-                             posterior.est = "mode")$case$sd$central["upper",] # upper hdi limit
+  s1pM.SD$Msd.low <- summary(s1ests, component = "case", posterior.est = "mode", 
+                             srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",] # lower hdi limit
+  s1pM.SD$Msd.up <- summary(s1ests, component = "case", posterior.est = "mode", 
+                            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",] # upper hdi limit
   
   pSD <- merge(pSD, s1pM.SD, by = "par_names")
   
@@ -1636,10 +1636,10 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1dM.SD$par_names <- paste0(s1dM.SD$Var1, "~~", s1dM.SD$Var1)
   s1dM.SD <- subset(s1dM.SD, select = c("par_names", "Freq"))
   names(s1dM.SD)[names(s1dM.SD) == "Freq"] <- "Msd"
-  s1dM.SD$Msd.low <- summary(s1ests, component = "dyad", 
-                             posterior.est = "mode")$dyad$sd$central["lower",] # lower hdi limit
-  s1dM.SD$Msd.up <- summary(s1ests, component = "dyad", 
-                             posterior.est = "mode")$dyad$sd$central["upper",] # upper hdi limit
+  s1dM.SD$Msd.low <- summary(s1ests, component = "dyad", posterior.est = "mode", 
+                             srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",] # lower hdi limit
+  s1dM.SD$Msd.up <- summary(s1ests, component = "dyad", posterior.est = "mode", 
+                            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",] # upper hdi limit
   
   dSD <- merge(dSD, s1dM.SD, by = "par_names")
   
@@ -1808,7 +1808,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 #       precision = 0.1, iter = 100, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "prophetic",
-#       precision = 0.1, iter = 100, smallvar = FALSE)
+#       precision = 0.1, iter = 50, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "ANOVA",
 #       precision = 0.1, iter = 100, smallvar = FALSE)
