@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale
-## Last updated: 19 December 2024
+## Last updated: 20 December 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1417,9 +1417,6 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                   IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                                                   iter = iter, priors = x, seed = 1512, verbose = F))
     
-    # call summary this way when you do BMA if (priorType == "BMA-FIML")
-    # foo <- lavaan.srm:::summary_mvSRM(s1ests)
-    
     ## compute mPSRF
     mcmcList_subsets <- lapply(s1ests,  As.mcmc.list)
     mcmcList <- do.call(c, mcmcList_subsets)
@@ -1441,9 +1438,6 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                                 IDout = IDout, IDin = IDin,
                                                                 IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
                                                                 iter = iter, priors = x, seed = 1512, verbose = F))
-      
-      # call summary this way when you do BMA if (priorType == "BMA-FIML")
-      # foo <- lavaan.srm:::summary_mvSRM(s1ests)
       
       ## compute mPSRF
       mcmcList_subsets <- lapply(s1ests,  As.mcmc.list)
@@ -1898,10 +1892,6 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 # s1sat(MCSampID = 1, n = 6, G = 10, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "BMA-FIML",
 #       precision = 0.1, multiMLE = F, iter = 50, smallvar = FALSE)
-
-# MCSampID = 1; n = 6; G = 10; rr.vars = c("V1", "V2", "V3"); IDout = "Actor";
-# IDin = "Partner"; IDgroup = "Group"; priorType = "BMA-FIML"; multiMLE = FALSE;
-# smallvar = FALSE; iter = 50; precision = 0.1
 
 ## test `smallvar` condition
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
