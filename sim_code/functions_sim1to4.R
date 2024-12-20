@@ -1152,6 +1152,7 @@ bma_FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NUL
   subsetRR <- lapply(subList, function(x) rr.data[rr.data$Group %in% x,]) # list of subsetted data
   
   subsetDefaults <- lapply(subsetRR, function(x) lavaan.srm::srm_priors(data = rr.data[rr.vars]))
+  # default t-priors for each subset will be different
   
   subsetPriors <- lapply(1:length(subsetRR), 
                          function(x) FIML_priors(data = subsetRR[[x]], 
@@ -2308,8 +2309,6 @@ if (analType == "FIML1S") {
 #            precision = 0.1, sim = "sim2")
 # makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML",
 #            precision = 0.1, sim = "sim2")
-# makeRunsim(nSamps = 2, n = 6, G = 10, analType = "BMA_FIML", precision = 0.1, 
-#            saves1 = T, sim = "BMAtest")
 
 #tested each runsim file below
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "default",
@@ -2334,6 +2333,10 @@ if (analType == "FIML1S") {
 #            precision = 0.1, smallvar = T, sim = "sim4") # worked, ran 2.09 mins
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "FIML1S", smallvar = T,
 #            sim = "sim4") # worked, ran 0.017 mins
+
+#BMAtest
+# makeRunsim(nSamps = 2, n = 6, G = 10, analType = "BMA_FIML", precision = 0.1,
+#            saves1 = T, sim = "BMAtest")
 
 #----
 
