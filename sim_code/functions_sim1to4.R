@@ -1419,8 +1419,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                   iter = iter, priors = x, seed = 1512, verbose = F))
     
     ## compute mPSRF
-    mcmcList_subsets <- lapply(s1ests,  As.mcmc.list)
-    mcmcList <- do.call(c, mcmcList_subsets)
+    mcmcList <- do.call(c, lapply(s1ests,  As.mcmc.list))
     mPSRF <- do.call(c, lapply(lapply(s1ests,  
                                       As.mcmc.list, 
                                       pars = get("MCMC_pars", envir = s1_env)), 
@@ -1441,8 +1440,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                                 iter = iter, priors = x, seed = 1512, verbose = F))
       
       ## compute mPSRF
-      mcmcList_subsets <- lapply(s1ests,  As.mcmc.list)
-      mcmcList <- do.call(c, mcmcList_subsets)
+      mcmcList <- do.call(c, lapply(s1ests,  As.mcmc.list))
       mPSRF <- do.call(c, lapply(lapply(s1ests,  
                                         As.mcmc.list, 
                                         pars = get("MCMC_pars", envir = s1_env)), 
