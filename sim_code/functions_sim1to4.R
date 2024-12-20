@@ -1239,6 +1239,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   library(lavaan.srm)
   library(coda) # for gelman.diag()
   library(rstan) # for As.mcmc.list()
+  library(abind) # for abind() for BMA
   
   s1_env <- new.env()
   s1_env$dat <- genGroups(MCSampID = MCSampID, n = n, G = G, smallvar = smallvar)
@@ -1410,30 +1411,52 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                             IDgroup = IDgroup, priorType = priorType, precision = precision,
                             multiMLE = multiMLE)
-    s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
-                    IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                    iter = iter, priors = s1_priors, seed = 1512, verbose = F)
+    # MCMC stage for BMA—results in a list of stan output
+    s1ests <- lapply(s1_priors, function(x) lavaan.srm::mvsrm(data = rr.data, rr.vars = rr.vars, 
+                                                  IDout = IDout, IDin = IDin,
+                                                  IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                                                  iter = iter, priors = x, seed = 1512, verbose = F))
+    
+    # call summary this way when you do BMA if (priorType == "BMA-FIML")
+    # foo <- lavaan.srm:::summary_mvSRM(s1ests)
     
     ## compute mPSRF
-    mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-    mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
+    mcmcList_subsets <- lapply(s1ests,  As.mcmc.list)
+    mcmcList <- do.call(c, mcmcList_subsets)
+    mPSRF <- do.call(c, lapply(lapply(s1ests,  
+                                      As.mcmc.list, 
+                                      pars = get("MCMC_pars", envir = s1_env)), 
+                               function(x) gelman.diag(x, autoburnin = T)$mpsrf)) # vector of mPSRFs of each subset
     
-    s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                    probs = c(0.025, 0.975))$summary))
+    # EAP output with BCI, n_eff, and Rhat
+    myArray <- abind(mcmcList, along = 1.5)
+    s1long <- data.frame(monitor(myArray, warmup = 0, print = F))
+    s1long <- cbind(iter, s1long[, c("mean", "se_mean", "sd", "X2.5.", "X97.5.", "n_eff", "Rhat")]) 
     s1long <- s1long[-nrow(s1long), ]
     
-    if (mPSRF > 1.05) {
+    if (any(mPSRF > 1.05)) {
       iter <- iter*2
-      s1ests <- mvsrm(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
-                      IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                      iter = iter, priors = s1_priors, seed = 1512, verbose = F)
+      # MCMC stage for BMA—results in a list of stan output
+      s1ests <- lapply(s1_priors, function(x) lavaan.srm::mvsrm(data = rr.data, rr.vars = rr.vars, 
+                                                                IDout = IDout, IDin = IDin,
+                                                                IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
+                                                                iter = iter, priors = x, seed = 1512, verbose = F))
+      
+      # call summary this way when you do BMA if (priorType == "BMA-FIML")
+      # foo <- lavaan.srm:::summary_mvSRM(s1ests)
       
       ## compute mPSRF
-      mcmcList <- As.mcmc.list(s1ests, pars = get("MCMC_pars", envir = s1_env))
-      mPSRF <- gelman.diag(mcmcList, autoburnin = T)$mpsrf
+      mcmcList_subsets <- lapply(s1ests,  As.mcmc.list)
+      mcmcList <- do.call(c, mcmcList_subsets)
+      mPSRF <- do.call(c, lapply(lapply(s1ests,  
+                                        As.mcmc.list, 
+                                        pars = get("MCMC_pars", envir = s1_env)), 
+                                 function(x) gelman.diag(x, autoburnin = T)$mpsrf)) # vector of mPSRFs of each subset
       
-      s1long <- cbind(iter = iter, data.frame(summary(s1ests, as.stanfit = TRUE,
-                                                      probs = c(0.025, 0.975))$summary))
+      # EAP output with BCI, n_eff, and Rhat
+      myArray <- abind(mcmcList, along = 1.5)
+      s1long <- data.frame(monitor(myArray, warmup = 0, print = F))
+      s1long <- cbind(iter, s1long[, c("mean", "se_mean", "sd", "X2.5.", "X97.5.", "n_eff", "Rhat")]) 
       s1long <- s1long[-nrow(s1long), ]
     }
   }
@@ -1818,6 +1841,10 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 # s1sat(MCSampID = 1, n = 6, G = 10, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
 #       IDin = "Partner", IDgroup = "Group", priorType = "BMA-FIML",
 #       precision = 0.1, multiMLE = F, iter = 50, smallvar = FALSE)
+
+# MCSampID = 1; n = 6; G = 10; rr.vars = c("V1", "V2", "V3"); IDout = "Actor";
+# IDin = "Partner"; IDgroup = "Group"; priorType = "BMA-FIML"; multiMLE = FALSE;
+# smallvar = FALSE; iter = 50; precision = 0.1
 
 ## test `smallvar` condition
 # s1sat(MCSampID = 1, n = 5, G = 3, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
