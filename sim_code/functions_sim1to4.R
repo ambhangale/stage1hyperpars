@@ -1490,8 +1490,14 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                         "par_names")
   pSigma$level <- "case"
   
-  s1pM.covmat  <- summary(s1ests, component = "case", interval = "hdi",
-                          posterior.est = "mode", srm.param = "cov") # MAPs
+  s1pM.covmat  <- if(priorType == "BMA-FIML") {
+                         lavaan.srm:::summary_mvSRM(s1ests,
+                                                    component = "case", interval = "hdi",
+                                                    posterior.est = "mode", srm.param = "cov")
+    } else {
+      summary(s1ests, component = "case", interval = "hdi",
+                                 posterior.est = "mode", srm.param = "cov")
+      } # MAPs
   s1pM.covEsts <- as.data.frame(as.table(s1pM.covmat$case$cov$mode))
   s1pM.covlow  <- as.data.frame(as.table(s1pM.covmat$group$cov$hdi$lower))
   s1pM.covup   <- as.data.frame(as.table(s1pM.covmat$group$cov$hdi$upper))
@@ -1523,8 +1529,13 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                         "par_names")
   dSigma$level <- "dyad"
   
-  s1dM.covmat <- summary(s1ests, component = "dyad", interval = "hdi",
-                         posterior.est = "mode", srm.param = "cov") # MAPs
+  s1dM.covmat <- if (priorType == "BMA-FIML") {
+    lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", interval = "hdi",
+                               posterior.est = "mode", srm.param = "cov")
+    } else {
+      summary(s1ests, component = "dyad", interval = "hdi",
+                         posterior.est = "mode", srm.param = "cov")
+      } # MAPs
   s1dM.covEsts <- as.data.frame(as.table(s1dM.covmat$dyad$cov$mode))
   s1dM.covlow  <- as.data.frame(as.table(s1dM.covmat$group$cov$hdi$lower))
   s1dM.covup   <- as.data.frame(as.table(s1dM.covmat$group$cov$hdi$upper))
@@ -1555,8 +1566,13 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     "Ecor.n_eff", "Ecor.Rhat", "par_names")
   pR$level <- "case"
   
-  s1pM.cormat <- summary(s1ests, component = "case", interval = "hdi",
-                         posterior.est = "mode", srm.param = "cor") #MAPs
+  s1pM.cormat <- if (priorType == "BMA-FIML") {
+    lavaan.srm:::summary_mvSRM(s1ests, component = "case", interval = "hdi",
+                               posterior.est = "mode", srm.param = "cor")
+  } else {
+    summary(s1ests, component = "case", interval = "hdi",
+            posterior.est = "mode", srm.param = "cor")
+  } # MAPs
   s1pM.corEsts <- as.data.frame(as.table(s1pM.cormat$case$cor$mode))
   s1pM.corlow  <- as.data.frame(as.table(s1pM.cormat$group$cor$hdi$lower))
   s1pM.corup   <- as.data.frame(as.table(s1pM.cormat$group$cor$hdi$upper))
@@ -1587,8 +1603,13 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     "Ecor.n_eff", "Ecor.Rhat", "par_names")
   dR$level <- "dyad"
   
-  s1dM.cormat <- summary(s1ests, component = "dyad", interval = "hdi",
-                         posterior.est = "mode", srm.param = "cor") # MAPs
+  s1dM.cormat <- if (priorType == "BMA-FIML") {
+    lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", interval = "hdi",
+                               posterior.est = "mode", srm.param = "cor")
+  } else {
+    summary(s1ests, component = "dyad", interval = "hdi",
+            posterior.est = "mode", srm.param = "cor")
+  } # MAPs
   ## dyadic reciprocity == DIAGONAL
   ## intra == BELOW
   ## inter == ABOVE
@@ -1623,8 +1644,13 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                      "Esd.n_eff", "Esd.Rhat", "par_names")
   pSD$level <- "case"
   
-  s1pM.SD <- as.data.frame(as.table(summary(s1ests, component = "case", 
-                                            posterior.est = "mode")$case$sd$mode)) #MAPs
+  s1pM.SD <- if (priorType == "BMA-FIML") {
+    as.data.frame(as.table(lavaan.srm:::summary_mvSRM(s1ests, component = "case", 
+                                   posterior.est = "mode")$case$sd$mode))
+  } else {
+    as.data.frame(as.table(summary(s1ests, component = "case", 
+                                   posterior.est = "mode")$case$sd$mode))
+  } #MAPs
   s1pM.SD$Var1 <- as.character(s1pM.SD$Var1)
   s1pM.SD[s1pM.SD == "V1_out"] <- "f1@A"; s1pM.SD[s1pM.SD == "V1_in"]  <- "f1@P"
   s1pM.SD[s1pM.SD == "V2_out"] <- "f2@A"; s1pM.SD[s1pM.SD == "V2_in"]  <- "f2@P"
@@ -1632,11 +1658,20 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1pM.SD$par_names <- paste0(s1pM.SD$Var1, "~~", s1pM.SD$Var1)
   s1pM.SD <- subset(s1pM.SD, select = c("par_names", "Freq"))
   names(s1pM.SD)[names(s1pM.SD) == "Freq"] <- "Msd"
-  s1pM.SD$Msd.low <- summary(s1ests, component = "case", posterior.est = "mode", 
-                             srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",] # lower hdi limit
-  s1pM.SD$Msd.up <- summary(s1ests, component = "case", posterior.est = "mode", 
-                            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",] # upper hdi limit
-  
+  s1pM.SD$Msd.low <- if (priorType == "BMA-FIML") {
+    lavaan.srm:::summary_mvSRM(s1ests, component = "case", posterior.est = "mode", 
+                               srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
+  } else {
+    summary(s1ests, component = "case", posterior.est = "mode", 
+            srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
+  } # lower hdi limit
+  s1pM.SD$Msd.up <- if (priorType == "BMA-FIML") {
+    lavaan.srm:::summary_mvSRM(s1ests, component = "case", posterior.est = "mode", 
+            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",]
+  } else {
+    summary(s1ests, component = "case", posterior.est = "mode", 
+            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",]
+  } # upper hdi limit
   pSD <- merge(pSD, s1pM.SD, by = "par_names")
   
   #dyad-level SDs
@@ -1650,8 +1685,13 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                      "Esd.n_eff", "Esd.Rhat", "par_names")
   dSD$level <- "dyad"
   
-  s1dM.SD <- as.data.frame(as.table(summary(s1ests, component = "dyad", 
-                                            posterior.est = "mode")$dyad$sd$mode))
+  s1dM.SD <- if (priorType == "BMA-FIML") {
+    as.data.frame(as.table(lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", 
+                                   posterior.est = "mode")$dyad$sd$mode))
+  } else {
+    as.data.frame(as.table(summary(s1ests, component = "dyad", 
+                                   posterior.est = "mode")$dyad$sd$mode)) 
+  }
   s1dM.SD$Var1 <- as.character(s1dM.SD$Var1)
   s1dM.SD[s1dM.SD == "V1"] <- "f1@AP"
   s1dM.SD[s1dM.SD == "V2"]  <- "f2@AP"
@@ -1659,10 +1699,20 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1dM.SD$par_names <- paste0(s1dM.SD$Var1, "~~", s1dM.SD$Var1)
   s1dM.SD <- subset(s1dM.SD, select = c("par_names", "Freq"))
   names(s1dM.SD)[names(s1dM.SD) == "Freq"] <- "Msd"
-  s1dM.SD$Msd.low <- summary(s1ests, component = "dyad", posterior.est = "mode", 
-                             srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",] # lower hdi limit
-  s1dM.SD$Msd.up <- summary(s1ests, component = "dyad", posterior.est = "mode", 
-                            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",] # upper hdi limit
+  s1dM.SD$Msd.low <- if (priorType == "BMA-FIML") {
+    lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", posterior.est = "mode", 
+            srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
+  } else {
+    summary(s1ests, component = "dyad", posterior.est = "mode", 
+            srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
+  } # lower hdi limit
+  s1dM.SD$Msd.up <- if (priorType == "BMA-FIML") {
+    lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", posterior.est = "mode", 
+            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",]
+  } else {
+    summary(s1ests, component = "dyad", posterior.est = "mode", 
+            srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",] 
+  } # upper hdi limit
   
   dSD <- merge(dSD, s1dM.SD, by = "par_names")
   
