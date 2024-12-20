@@ -2206,7 +2206,8 @@ ogsat <- function(MCSampID, n, G, smallvar = FALSE, savefile = FALSE) {
 
 # README: in this function, 1S-FIML = FIML1S when analType is single-stage FIML
 
-makeRunsim <- function(nSamps, n, G, analType, precision = NULL, smallvar = FALSE, sim) {
+makeRunsim <- function(nSamps, n, G, analType, precision = NULL, 
+                       smallvar = FALSE, saves1 = FALSE, sim) {
   runsimfile <- paste0('## Aditi M. Bhangale
 ## Last updated:', Sys.Date(), 
 
@@ -2263,10 +2264,12 @@ if (analType == "FIML1S") {
                                   "modeest", "HDInterval", "rstan")) %dopar% {
                                     
                                     out <- try(s1sat(MCSampID = ',analType,'_grid[row_num, ]$MCSampID, 
-                                                     n = ',analType,'_grid[row_num, ]$n, G = ',analType,'_grid[row_num, ]$G,
+                                                     n = ',analType,'_grid[row_num, ]$n, 
+                                                     G = ',analType,'_grid[row_num, ]$G,
                                                      priorType = ',analType,'_grid[row_num, ]$priorType, 
                                                      precision = ',analType,'_grid[row_num, ]$precision,
-                                                     smallvar = ', smallvar,'), silent = T)
+                                                     smallvar = ', smallvar,', 
+                                                     saves1 = ', saves1,'), silent = T)
                                     if(inherits(out, "try-error")) out <- NULL
                                     
                                     return(out)
@@ -2305,7 +2308,8 @@ if (analType == "FIML1S") {
 #            precision = 0.1, sim = "sim2")
 # makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML",
 #            precision = 0.1, sim = "sim2")
-makeRunsim(nSamps = 5, n = 6, G = 10, analType = "BMA_FIML", precision = 0.1, sim = "BMAtest")
+# makeRunsim(nSamps = 2, n = 6, G = 10, analType = "BMA_FIML", precision = 0.1, 
+#            saves1 = T, sim = "BMAtest")
 
 #tested each runsim file below
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "default",
