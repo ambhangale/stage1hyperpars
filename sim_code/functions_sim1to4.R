@@ -2332,8 +2332,8 @@ if (analType == "FIML1S") {
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "FIML1S", smallvar = T,
 #            sim = "sim4") # worked, ran 0.017 mins
 
-#BMAtest
-# makeRunsim(nSamps = 2, n = 6, G = 10, analType = "BMA_FIML", precision = 0.1,
+# make runsim file for BMAtest simulation 
+# makeRunsim(nSamps = 1000, n = 6, G = 10, analType = "BMA_FIML", precision = 0.1,
 #            saves1 = T, sim = "BMAtest")
 
 #----
@@ -2389,6 +2389,9 @@ cp "$TMPDIR"/*.rds $HOME/SR-SEM/stage1hyperpars/'
 # makeShSnellius(n = 6, G = 10, analType = "FIML", precision = 0.1, smallvar = T, sim = "sim4", wallTime = "5-00:00:00")
 # makeShSnellius(n = 6, G = 10, analType = "FIML1S", smallvar = T, sim = "sim4", wallTime = "5-00:00:00")
 
+# make shell file for BMAtest simulation
+# makeShSnellius(n = 6, G = 10, analType = "BMA_FIML", precision = 0.1,
+#                smallvar = F, sim = "BMAtest", wallTime = "5-00:00:00")
 
 #----
 
