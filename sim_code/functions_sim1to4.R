@@ -1718,7 +1718,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   
   #end: saving results----
   
-  # begin: compiling final results ----
+  # begin: compiling final results----
   
   # rbind() the person and dyad levels
   Sigma <- rbind(pSigma, dSigma)
@@ -1755,7 +1755,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   # add prior1 and prior2 columns to R and SD dataframes
   R$prior1 <- NA; R$prior2 <- NA; SD$prior1 <- NA; SD$prior2 <- NA
   
-  if (priorType %in% c("default", "thoughtful", "prophetic", "ANOVA", "FIML"))
+  if (priorType %in% c("default", "thoughtful", "prophetic", "ANOVA", "FIML")) {
   for(i in 1:length(rr.vars)) {
     ### outgoing SD prior parameters
     SD$prior1[SD$par_names == paste0("f", i, "@A~~f", i, "@A")] <- 
@@ -1820,16 +1820,23 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
         s1_priors$case_beta[paste0("V", j, "_in"), paste0("V", i, "_in")]
     }
   }
-  
+  }
+    
   # add run time
   Sigma$RunTime <- difftime(t1, t0, units = "mins")
   R$RunTime <- difftime(t1, t0, units = "mins")
   SD$RunTime <- difftime(t1, t0, units = "mins")
   
   # add mPSRF column
-  Sigma$mPSRF <- mPSRF
-  R$mPSRF <- mPSRF
-  SD$mPSRF <- mPSRF
+  Sigma$mPSRF <- ifelse(priorType == "BMA-FIML", 
+                        paste0(round(mPSRF,3), collapse = ","),
+                        mPSRF)
+  R$mPSRF <- ifelse(priorType == "BMA-FIML", 
+                    paste0(round(mPSRF,3), collapse = ","),
+                    mPSRF)
+  SD$mPSRF <- ifelse(priorType == "BMA-FIML", 
+                     paste0(round(mPSRF,3), collapse = ","),
+                     mPSRF)
   
   # reorder columns and add redundant columns (those in og) to make postprocessing easier
   Sigma <- Sigma[, c("par_names", "MCSampID", "n", "G", "condition", "level",
@@ -1857,7 +1864,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                           ifelse(isTRUE(smallvar), "-smallvar", "")),
                         iter = iter, mPSRF = mPSRF))
   
-  # end: compiling final results ----
+  # end: compiling final results----
   
   if (savefile) saveRDS(out, 
                         file = paste0("ID", MCSampID, ".nG", G, ".n", n, "_", 
