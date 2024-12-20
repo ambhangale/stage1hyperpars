@@ -2261,7 +2261,7 @@ if (analType == "FIML1S") {
   paste0('s1Result <- foreach(row_num = 1:nrow(',analType,'_grid),
                     .packages = c("mnormt", "parallel", "portableParallelSeeds",
                                   "TripleR", "srm", "car", "lavaan.srm", "coda",
-                                  "modeest", "HDInterval", "rstan")) %dopar% {
+                                  "modeest", "HDInterval", "rstan", "abind")) %dopar% {
                                     
                                     out <- try(s1sat(MCSampID = ',analType,'_grid[row_num, ]$MCSampID, 
                                                      n = ',analType,'_grid[row_num, ]$n, 
