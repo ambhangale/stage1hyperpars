@@ -1154,12 +1154,12 @@ bma_FIML_priors <- function(data, rr.vars, IDout, IDin, IDgroup, precision = NUL
   subsetDefaults <- lapply(subsetRR, function(x) lavaan.srm::srm_priors(data = rr.data[rr.vars]))
   # default t-priors for each subset will be different
   
-  subsetPriors <- lapply(1:length(subsetRR), 
-                         function(x) FIML_priors(data = subsetRR[[x]], 
+  subsetPriors <- lapply(subsetRR, 
+                         function(x) FIML_priors(data = x, 
                                                  rr.vars = rr.vars, IDout = IDout,
                                                  IDin = IDin, IDgroup = IDgroup, precision = precision,       
                                                  multiMLE = multiMLE,
-                                                 default_prior = lavaan.srm::srm_priors(subsetRR[[x]][rr.vars])))
+                                                 default_prior = lavaan.srm::srm_priors(x[rr.vars])))
   
   subsetPriors
 }
