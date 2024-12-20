@@ -1201,7 +1201,7 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
    srmPriors <- FIML_priors(data = data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
                             IDgroup = IDgroup, precision = precision, multiMLE = multiMLE,
                             default_prior = get("default_prior", envir = prior_env))
- } else if (priorType == "BMA-FIML") { # BMA of FIML-priors (`srm`)
+ } else if (priorType == "BMA_FIML") { # BMA of FIML-priors (`srm`)
    srmPriors <- bma_FIML_priors(data = data, rr.vars = rr.vars, IDout = IDout, IDin = IDin, 
                                 IDgroup = IDgroup, precision = precision, multiMLE = multiMLE)
  }
@@ -1220,7 +1220,7 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 # set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "FIML",
 #            IDout = "Actor", IDin = "Partner", IDgroup = "Group",
 #            multiMLE = FALSE, precision = 0.1)
-# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "BMA-FIML",
+# set_priors(data = rr.data, rr.vars = c("V1", "V2", "V3"), priorType = "BMA_FIML",
 #            IDout = "Actor", IDin = "Partner", IDgroup = "Group",
 #            multiMLE = FALSE, precision = 0.1)
 
@@ -1235,7 +1235,7 @@ set_priors <- function(data, rr.vars, IDout, IDin, IDgroup, priorType, targetCor
 s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"), 
                   IDout = "Actor", IDin = "Partner", IDgroup = "Group", priorType,
                   targetCorr = 0.3, precision = 0.1, smallvar = FALSE, 
-                  multiMLE = FALSE, iter = 2000, savefile = FALSE) {
+                  multiMLE = FALSE, iter = 2000, savefile = FALSE, saves1 = FALSE) {
   library(lavaan.srm)
   library(coda) # for gelman.diag()
   library(rstan) # for As.mcmc.list()
@@ -1405,7 +1405,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                                       probs = c(0.025, 0.975))$summary))
     s1long <- s1long[-nrow(s1long), ]
     }
-  } else if (priorType == "BMA-FIML") { #FIML, but BMA-ed
+  } else if (priorType == "BMA_FIML") { #FIML, but BMA-ed
     rr.data <- get("dat", envir = s1_env)
     
     s1_priors <- set_priors(data = rr.data, rr.vars = rr.vars, IDout = IDout, IDin = IDin,
@@ -1484,7 +1484,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                         "par_names")
   pSigma$level <- "case"
   
-  s1pM.covmat  <- if(priorType == "BMA-FIML") {
+  s1pM.covmat  <- if(priorType == "BMA_FIML") {
                          lavaan.srm:::summary_mvSRM(s1ests,
                                                     component = "case", interval = "hdi",
                                                     posterior.est = "mode", srm.param = "cov")
@@ -1523,7 +1523,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                         "par_names")
   dSigma$level <- "dyad"
   
-  s1dM.covmat <- if (priorType == "BMA-FIML") {
+  s1dM.covmat <- if (priorType == "BMA_FIML") {
     lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", interval = "hdi",
                                posterior.est = "mode", srm.param = "cov")
     } else {
@@ -1560,7 +1560,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     "Ecor.n_eff", "Ecor.Rhat", "par_names")
   pR$level <- "case"
   
-  s1pM.cormat <- if (priorType == "BMA-FIML") {
+  s1pM.cormat <- if (priorType == "BMA_FIML") {
     lavaan.srm:::summary_mvSRM(s1ests, component = "case", interval = "hdi",
                                posterior.est = "mode", srm.param = "cor")
   } else {
@@ -1597,7 +1597,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                     "Ecor.n_eff", "Ecor.Rhat", "par_names")
   dR$level <- "dyad"
   
-  s1dM.cormat <- if (priorType == "BMA-FIML") {
+  s1dM.cormat <- if (priorType == "BMA_FIML") {
     lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", interval = "hdi",
                                posterior.est = "mode", srm.param = "cor")
   } else {
@@ -1638,7 +1638,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                      "Esd.n_eff", "Esd.Rhat", "par_names")
   pSD$level <- "case"
   
-  s1pM.SD <- if (priorType == "BMA-FIML") {
+  s1pM.SD <- if (priorType == "BMA_FIML") {
     as.data.frame(as.table(lavaan.srm:::summary_mvSRM(s1ests, component = "case", 
                                    posterior.est = "mode")$case$sd$mode))
   } else {
@@ -1652,14 +1652,14 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1pM.SD$par_names <- paste0(s1pM.SD$Var1, "~~", s1pM.SD$Var1)
   s1pM.SD <- subset(s1pM.SD, select = c("par_names", "Freq"))
   names(s1pM.SD)[names(s1pM.SD) == "Freq"] <- "Msd"
-  s1pM.SD$Msd.low <- if (priorType == "BMA-FIML") {
+  s1pM.SD$Msd.low <- if (priorType == "BMA_FIML") {
     lavaan.srm:::summary_mvSRM(s1ests, component = "case", posterior.est = "mode", 
                                srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
   } else {
     summary(s1ests, component = "case", posterior.est = "mode", 
             srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
   } # lower hdi limit
-  s1pM.SD$Msd.up <- if (priorType == "BMA-FIML") {
+  s1pM.SD$Msd.up <- if (priorType == "BMA_FIML") {
     lavaan.srm:::summary_mvSRM(s1ests, component = "case", posterior.est = "mode", 
             srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",]
   } else {
@@ -1679,7 +1679,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                      "Esd.n_eff", "Esd.Rhat", "par_names")
   dSD$level <- "dyad"
   
-  s1dM.SD <- if (priorType == "BMA-FIML") {
+  s1dM.SD <- if (priorType == "BMA_FIML") {
     as.data.frame(as.table(lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", 
                                    posterior.est = "mode")$dyad$sd$mode))
   } else {
@@ -1693,14 +1693,14 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   s1dM.SD$par_names <- paste0(s1dM.SD$Var1, "~~", s1dM.SD$Var1)
   s1dM.SD <- subset(s1dM.SD, select = c("par_names", "Freq"))
   names(s1dM.SD)[names(s1dM.SD) == "Freq"] <- "Msd"
-  s1dM.SD$Msd.low <- if (priorType == "BMA-FIML") {
+  s1dM.SD$Msd.low <- if (priorType == "BMA_FIML") {
     lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", posterior.est = "mode", 
             srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
   } else {
     summary(s1ests, component = "dyad", posterior.est = "mode", 
             srm.param = "sd", interval = "hdi")$group$sd$hdi["lower",]
   } # lower hdi limit
-  s1dM.SD$Msd.up <- if (priorType == "BMA-FIML") {
+  s1dM.SD$Msd.up <- if (priorType == "BMA_FIML") {
     lavaan.srm:::summary_mvSRM(s1ests, component = "dyad", posterior.est = "mode", 
             srm.param = "sd", interval = "hdi")$group$sd$hdi["upper",]
   } else {
@@ -1822,13 +1822,13 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   SD$RunTime <- difftime(t1, t0, units = "mins")
   
   # add mPSRF column
-  Sigma$mPSRF <- ifelse(priorType == "BMA-FIML", 
+  Sigma$mPSRF <- ifelse(priorType == "BMA_FIML", 
                         paste0(round(mPSRF,3), collapse = ","),
                         mPSRF)
-  R$mPSRF <- ifelse(priorType == "BMA-FIML", 
+  R$mPSRF <- ifelse(priorType == "BMA_FIML", 
                     paste0(round(mPSRF,3), collapse = ","),
                     mPSRF)
-  SD$mPSRF <- ifelse(priorType == "BMA-FIML", 
+  SD$mPSRF <- ifelse(priorType == "BMA_FIML", 
                      paste0(round(mPSRF,3), collapse = ","),
                      mPSRF)
   
@@ -1866,6 +1866,11 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                                       ifelse(!missing(precision), paste0("_", precision), "_SE"),
                                       ifelse(isTRUE(smallvar), "_smallvar", ""), ".rds"))
   
+  if (saves1) saveRDS(s1ests, file = paste0("ID", MCSampID, ".nG", G, ".n", n, "_s1ests_", 
+                      priorType, 
+                      ifelse(!missing(precision), paste0("_", precision), "_SE"),
+                      ifelse(isTRUE(smallvar), "_smallvar", ""), ".rds"))
+  
   return(out)
 
 }
@@ -1890,7 +1895,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
 #       IDin = "Partner", IDgroup = "Group", priorType = "FIML",
 #       precision = 0.1, multiMLE = F, iter = 50, smallvar = FALSE)
 # s1sat(MCSampID = 1, n = 6, G = 10, rr.vars = c("V1", "V2", "V3"), IDout = "Actor",
-#       IDin = "Partner", IDgroup = "Group", priorType = "BMA-FIML",
+#       IDin = "Partner", IDgroup = "Group", priorType = "BMA_FIML",
 #       precision = 0.1, multiMLE = F, iter = 50, smallvar = FALSE)
 
 ## test `smallvar` condition
@@ -2300,6 +2305,7 @@ if (analType == "FIML1S") {
 #            precision = 0.1, sim = "sim2")
 # makeRunsim(nSamps = 1000, n = "c(6,8,10,20)", G = "c(10, 25)", analType = "FIML",
 #            precision = 0.1, sim = "sim2")
+makeRunsim(nSamps = 5, n = 6, G = 10, analType = "BMA_FIML", precision = 0.1, sim = "BMAtest")
 
 #tested each runsim file below
 # makeRunsim(nSamps = 1, n = 6, G = 10, analType = "default",
