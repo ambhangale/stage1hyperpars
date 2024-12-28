@@ -1,5 +1,5 @@
-## Aditi M. Bhangale
-## Last updated: 20 December 2024
+## Aditi M. Bhangale & Terrence D. Jorgensen
+## Last updated: 24 December 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1237,7 +1237,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                   IDout = "Actor", IDin = "Partner", IDgroup = "Group", priorType,
                   targetCorr = 0.3, precision = 0.1, smallvar = FALSE, 
                   multiMLE = FALSE, iter = 2000, savefile = FALSE, saves1 = FALSE) {
-  library(lavaan.srm)
+  library(lavaan.srm) # for mvsrm()
   library(coda) # for gelman.diag()
   library(rstan) # for As.mcmc.list()
   library(abind) # for abind() for BMA
@@ -1413,23 +1413,71 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                             IDgroup = IDgroup, priorType = priorType, precision = precision,
                             multiMLE = multiMLE)
     # MCMC stage for BMA—results in a list of stan output
-    s1ests <- lapply(s1_priors, function(x) lavaan.srm::mvsrm(data = rr.data, rr.vars = rr.vars, 
-                                                  IDout = IDout, IDin = IDin,
-                                                  IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                                                  iter = iter, priors = x, seed = 1512, verbose = F))
+    s1ests <- lapply(s1_priors, function(x) {
+      lavaan.srm::mvsrm(data = rr.data, rr.vars = rr.vars, 
+                        IDout = IDout, IDin = IDin,
+                        IDgroup = IDgroup, fixed.groups = TRUE, init_r = 0.5,
+                        iter = iter, chains = 2, # fewer chains to pool
+                        priors = x, seed = 1512, verbose = FALSE)
+    })
     
     ## compute mPSRF
+<<<<<<< HEAD
     mcmcList <- do.call(c, lapply(s1ests,  As.mcmc.list))
     mPSRF <- do.call(c, lapply(lapply(s1ests,  
                                       As.mcmc.list, 
                                       pars = get("MCMC_pars", envir = s1_env)), 
                                function(x) gelman.diag(x, autoburnin = T)$mpsrf)) # vector of mPSRFs of each subset
+=======
+    mcmcList <- lapply(s1ests, As.mcmc.list, 
+                       pars = get("MCMC_pars", envir = s1_env))
+    #FIXME: This does not need to be a character vector.
+    #       Use sapply() to return a numeric vector of mPSRF to check below
+    mPSRF <- do.call(c, lapply(mcmcList, function(x) {
+      gelman.diag(x, autoburnin = T)$mpsrf # vector of mPSRFs of each subset
+    }))
+    ## According to Zitzmann and Hecht (2019, Figure 7)
+    ##              https://doi.org/10.1080/10705511.2018.1545232
+    ##  - Rhat = 1.01 from 2 chains corresponds to Neff=100
+    ##  - Rhat = 1.02 from 4 chains corresponds to Neff=100
+    ## However, most parameters' Rhat < mPSRF
+    if (any(mPSRF > 1.05)) {
+      iter <- 10000 # if 4000 already isn't enough, go really high
+      # MCMC stage for BMA—results in a list of stan output
+      s1ests <- lapply(s1_priors, function(x) {
+        lavaan.srm::mvsrm(data = rr.data, rr.vars = rr.vars, 
+                          IDout = IDout, IDin = IDin,
+                          IDgroup = IDgroup, fixed.groups = TRUE, init_r = 0.5,
+                          iter = iter, chains = 2, # fewer chains to pool
+                          priors = x, seed = 1512, verbose = FALSE)
+      })
+      
+      ## compute mPSRF again
+      mcmcList <- lapply(s1ests,  As.mcmc.list)
+      #FIXME: Use sapply() to return a numeric vector of mPSRF (like above)
+      mPSRF <- do.call(c, lapply(mcmcList, function(x) {
+        gelman.diag(x, autoburnin = T)$mpsrf # vector of mPSRFs of each subset
+      }))
+    }
+    ## only pool samples using priors that appear to lead to convergence
+    convSamps <- which(mPSRF < 1.05)
+    if (length(convSamps) > 1L) {
+      ## multiple sets of chains/priors converged, so concatenate into 3-D array
+      myArray <- abind(do.call(c, mcmcList[convSamps]), along = 1.5)
+      
+    } else if (length(convSamps) == 1L) {
+      ## only 1 set of chains/priors converged, so treat those as usual
+      myArray <- mcmcList[[convSamps]]
+      
+      ## otherwise, pool all nonconverged chains (results get ignored, as usual)
+    } else myArray <- abind(do.call(c, mcmcList), along = 1.5)
+>>>>>>> ce028d8425645738609e8c10fa83fe72a43369f0
     
     # EAP output with BCI, n_eff, and Rhat
-    myArray <- abind(mcmcList, along = 1.5)
-    s1long <- data.frame(monitor(myArray, warmup = 0, print = F))
+    s1long <- data.frame(monitor(myArray, warmup = 0, print = FALSE))
     s1long <- cbind(iter, s1long[, c("mean", "se_mean", "sd", "X2.5.", "X97.5.", "n_eff", "Rhat")]) 
     s1long <- s1long[-nrow(s1long), ]
+<<<<<<< HEAD
     
     if (any(mPSRF > 1.05)) {
       iter <- iter*2
@@ -1452,6 +1500,8 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       s1long <- cbind(iter, s1long[, c("mean", "se_mean", "sd", "X2.5.", "X97.5.", "n_eff", "Rhat")]) 
       s1long <- s1long[-nrow(s1long), ]
     }
+=======
+>>>>>>> ce028d8425645738609e8c10fa83fe72a43369f0
   }
   
   
@@ -1528,7 +1578,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     } else {
       summary(s1ests, component = "dyad", interval = "hdi",
                          posterior.est = "mode", srm.param = "cov")
-      } # MAPs
+    } # MAPs
   s1dM.covEsts <- as.data.frame(as.table(s1dM.covmat$dyad$cov$mode))
   s1dM.covlow  <- as.data.frame(as.table(s1dM.covmat$group$cov$hdi$lower))
   s1dM.covup   <- as.data.frame(as.table(s1dM.covmat$group$cov$hdi$upper))
@@ -1850,12 +1900,15 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
   SD$ogsd <- NA; SD$ogsd.SE <- NA; SD$ogsd.low <- NA; SD$ogsd.up <- NA
   
   # combine covariances and correlations + SDs as list
-  out <- list(cov = Sigma, cor = R, SD = SD, 
-              mPSRF = c(MCSampID = as.numeric(MCSampID), condition = paste0(n, "-", G), 
-                        analType = paste0("MCMC-", priorType, "-", 
-                                          ifelse(!missing(precision), precision, "SE"),
-                                          ifelse(isTRUE(smallvar), "-smallvar", "")),
-                        iter = iter, mPSRF = mPSRF))
+  out <- list(cov = Sigma, cor = R, SD = SD, mPSRF = mPSRF)
+  # save condition etc. as attributes to $mPSRF (so it stays numeric)
+  attributes(out$mPSRF) <- c(attributes(out$mPSRF),
+                             MCSampID = as.numeric(MCSampID),
+                             condition = paste0(n, "-", G), 
+                             analType = paste0("MCMC-", priorType, "-", 
+                                               ifelse(!missing(precision), precision, "SE"),
+                                               ifelse(isTRUE(smallvar), "-smallvar", "")),
+                             iter = iter)
   
   # end: compiling final results----
   
