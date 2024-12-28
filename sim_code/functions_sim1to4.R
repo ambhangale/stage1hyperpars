@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale & Terrence D. Jorgensen
-## Last updated: 24 December 2024
+## Last updated: 28 December 2024
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1421,11 +1421,9 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                         priors = x, seed = 1512, verbose = FALSE)
     })
     
-    ## compute mPSRF
+    ## compute mPSRF on NON-redundant parameters (to avoid error)
     mcmcList <- lapply(s1ests, As.mcmc.list, 
                        pars = get("MCMC_pars", envir = s1_env))
-    #FIXME: This does not need to be a character vector.
-    #       Use sapply() to return a numeric vector of mPSRF to check below
     mPSRF <- do.call(c, lapply(mcmcList, function(x) {
       gelman.diag(x, autoburnin = T)$mpsrf # vector of mPSRFs of each subset
     }))
@@ -1446,13 +1444,16 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       })
       
       ## compute mPSRF again
-      mcmcList <- lapply(s1ests,  As.mcmc.list)
-      #FIXME: Use sapply() to return a numeric vector of mPSRF (like above)
+      mcmcList <- lapply(s1ests,  As.mcmc.list, 
+                         pars = get("MCMC_pars", envir = s1_env))
       mPSRF <- do.call(c, lapply(mcmcList, function(x) {
         gelman.diag(x, autoburnin = T)$mpsrf # vector of mPSRFs of each subset
       }))
     }
-    ## only pool samples using priors that appear to lead to convergence
+    ## Pool samples of ALL parameters, so remaining code can summarize both
+    ## covariances and correlations/SDs.  
+    mcmcList <- lapply(s1ests,  As.mcmc.list)
+    ## But only pool samples using priors that appear to lead to convergence.
     convSamps <- which(mPSRF < 1.05)
     if (length(convSamps) > 1L) {
       ## multiple sets of chains/priors converged, so concatenate into 3-D array
