@@ -1422,13 +1422,12 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     })
     
     ## compute mPSRF
-<<<<<<< HEAD
     mcmcList <- do.call(c, lapply(s1ests,  As.mcmc.list))
     mPSRF <- do.call(c, lapply(lapply(s1ests,  
                                       As.mcmc.list, 
                                       pars = get("MCMC_pars", envir = s1_env)), 
                                function(x) gelman.diag(x, autoburnin = T)$mpsrf)) # vector of mPSRFs of each subset
-=======
+
     mcmcList <- lapply(s1ests, As.mcmc.list, 
                        pars = get("MCMC_pars", envir = s1_env))
     #FIXME: This does not need to be a character vector.
@@ -1471,13 +1470,11 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       
       ## otherwise, pool all nonconverged chains (results get ignored, as usual)
     } else myArray <- abind(do.call(c, mcmcList), along = 1.5)
->>>>>>> ce028d8425645738609e8c10fa83fe72a43369f0
     
     # EAP output with BCI, n_eff, and Rhat
     s1long <- data.frame(monitor(myArray, warmup = 0, print = FALSE))
     s1long <- cbind(iter, s1long[, c("mean", "se_mean", "sd", "X2.5.", "X97.5.", "n_eff", "Rhat")]) 
     s1long <- s1long[-nrow(s1long), ]
-<<<<<<< HEAD
     
     if (any(mPSRF > 1.05)) {
       iter <- iter*2
