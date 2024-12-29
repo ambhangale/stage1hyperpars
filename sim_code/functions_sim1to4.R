@@ -1421,13 +1421,6 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
                         priors = x, seed = 1512, verbose = FALSE)
     })
     
-    ## compute mPSRF
-    mcmcList <- do.call(c, lapply(s1ests,  As.mcmc.list))
-    mPSRF <- do.call(c, lapply(lapply(s1ests,  
-                                      As.mcmc.list, 
-                                      pars = get("MCMC_pars", envir = s1_env)), 
-                               function(x) gelman.diag(x, autoburnin = T)$mpsrf)) # vector of mPSRFs of each subset
-
     ## compute mPSRF on NON-redundant parameters (to avoid error)
     mcmcList <- lapply(s1ests, As.mcmc.list, 
                        pars = get("MCMC_pars", envir = s1_env))
@@ -1477,28 +1470,6 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
     s1long <- data.frame(monitor(myArray, warmup = 0, print = FALSE))
     s1long <- cbind(iter, s1long[, c("mean", "se_mean", "sd", "X2.5.", "X97.5.", "n_eff", "Rhat")]) 
     s1long <- s1long[-nrow(s1long), ]
-    
-    if (any(mPSRF > 1.05)) {
-      iter <- iter*2
-      # MCMC stage for BMA—results in a list of stan output
-      s1ests <- lapply(s1_priors, function(x) lavaan.srm::mvsrm(data = rr.data, rr.vars = rr.vars, 
-                                                                IDout = IDout, IDin = IDin,
-                                                                IDgroup = IDgroup, fixed.groups = T, init_r = 0.5,
-                                                                iter = iter, priors = x, seed = 1512, verbose = F))
-      
-      ## compute mPSRF
-      mcmcList <- do.call(c, lapply(s1ests,  As.mcmc.list))
-      mPSRF <- do.call(c, lapply(lapply(s1ests,  
-                                        As.mcmc.list, 
-                                        pars = get("MCMC_pars", envir = s1_env)), 
-                                 function(x) gelman.diag(x, autoburnin = T)$mpsrf)) # vector of mPSRFs of each subset
-      
-      # EAP output with BCI, n_eff, and Rhat
-      myArray <- abind(mcmcList, along = 1.5)
-      s1long <- data.frame(monitor(myArray, warmup = 0, print = F))
-      s1long <- cbind(iter, s1long[, c("mean", "se_mean", "sd", "X2.5.", "X97.5.", "n_eff", "Rhat")]) 
-      s1long <- s1long[-nrow(s1long), ]
-    }
   }
   
   
