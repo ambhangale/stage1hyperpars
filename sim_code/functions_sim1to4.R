@@ -1,5 +1,5 @@
 ## Aditi M. Bhangale & Terrence D. Jorgensen
-## Last updated: 28 December 2024
+## Last updated: 9 January 2025
 
 # Hyperparameters of empirical Bayes priors for MCMC estimation of the 
 # multivariate social relations model
@@ -1461,7 +1461,7 @@ s1sat <- function(MCSampID, n, G, rr.vars = c("V1", "V2", "V3"),
       
     } else if (length(convSamps) == 1L) {
       ## only 1 set of chains/priors converged, so treat those as usual
-      myArray <- mcmcList[[convSamps]]
+      myArray <- abind(mcmcList[[convSamps]], along = 1.5)
       
       ## otherwise, pool all nonconverged chains (results get ignored, as usual)
     } else myArray <- abind(do.call(c, mcmcList), along = 1.5)
